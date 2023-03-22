@@ -1,6 +1,14 @@
-# Getting Started with Create React App
+# [Retirement Calculator](https://retire.skylerlewis.io)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+[![Netlify Status](https://api.netlify.com/api/v1/badges/4449ba14-2f4c-48ad-8929-69afb85dbcc5/deploy-status)](https://app.netlify.com/sites/eager-albattani-50701f/deploys)
+
+This is a browser-based calculator that can help someone understand their retirement outlook. It displays output data in a table for easy analysis.
+
+## Tools Used
+
+- [Create React App](https://create-react-app.dev)
+- [Material UI](https://mui.com)
+- [big.js](https://mikemcl.github.io/big.js)
 
 ## Available Scripts
 
