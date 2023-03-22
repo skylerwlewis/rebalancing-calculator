@@ -1,6 +1,6 @@
-# [Retirement Calculator](https://retire.skylerlewis.io)
+# [Rebalancing Calculator](https://rebalance.skylerlewis.io)
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/4449ba14-2f4c-48ad-8929-69afb85dbcc5/deploy-status)](https://app.netlify.com/sites/eager-albattani-50701f/deploys)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/689eea16-0568-4842-8e86-26287cafd8c3/deploy-status)](https://app.netlify.com/sites/precious-blancmange-587b38/deploys)
 
 This is a browser-based calculator that can help someone understand their retirement outlook. It displays output data in a table for easy analysis.
 
