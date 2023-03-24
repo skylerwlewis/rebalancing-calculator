@@ -8,18 +8,15 @@ import { StringFieldSetters } from './StringFieldProps';
 import { UrlParamInputContext } from './UrlParamInputProvider';
 
 //Interfaces for objects we need to hold in state
-interface FundInputItemStrings {
+export interface FundInputItemStrings {
   nameString: string;
   currentBalanceString: string;
   targetPercentString: string;
 }
 
-export type InputUrlParams = {
-  fundInputItemStrings?: FundInputItemStrings[];
-};
-
 //Helper setter interface for passing down to TextFields
-interface FundInputItemSetter {
+export interface FundInputItemSetter {
+  internalId: number,
   nameSetters: StringFieldSetters;
   currentBalanceSetters: BigFieldSetters;
   targetPercentSetters: BigFieldSetters;
@@ -34,23 +31,27 @@ type InputContextState = {
 }
 
 //Starting list of items in state
-const initialItems = [
+const initialItems: FundInputItem[] = [
   {
+    internalId: 0,
     name: "SWISX",
     currentBalance: new Big('32116.97'),
     targetPercent: ONE_HUNDREDTH.times(new Big('20'))
   },
   {
+    internalId: 1,
     name: "SWMCX",
     currentBalance: new Big('30277.81'),
     targetPercent: ONE_HUNDREDTH.times(new Big('20'))
   },
   {
+    internalId: 2,
     name: "SWPPX",
     currentBalance: new Big('47674.68'),
     targetPercent: ONE_HUNDREDTH.times(new Big('30'))
   },
   {
+    internalId: 3,
     name: "SWSSX",
     currentBalance: new Big('44728.47'),
     targetPercent: ONE_HUNDREDTH.times(new Big('30'))
@@ -75,6 +76,7 @@ const initialInputState: InputContextState = {
   fundInputItems: initialItems,
   fundInputItemSetters: initialItems.map(fundInputItem => {
     return {
+      internalId: fundInputItem.internalId,
       nameSetters: initialStringFieldSetter(fundInputItem.name),
       currentBalanceSetters: initialBigFieldSetter(fundInputItem.currentBalance),
       targetPercentSetters: initialBigFieldSetter(fundInputItem.targetPercent)
@@ -92,8 +94,9 @@ export const toStrings = (fundInputItem: FundInputItem): FundInputItemStrings =>
   }
 }
 
-export const fromStrings = (fundInputItemStrings: FundInputItemStrings): FundInputItem => {
+export const fromStrings = (fundInputItemStrings: FundInputItemStrings, index: number): FundInputItem => {
   return {
+    internalId: index,
     name: fundInputItemStrings.nameString,
     currentBalance: new Big(fundInputItemStrings.currentBalanceString),
     targetPercent: ONE_HUNDREDTH.times(new Big(fundInputItemStrings.targetPercentString))
@@ -106,12 +109,13 @@ const InputProvider = ({ children }: PropsWithChildren<{}>) => {
 
   const { urlParamsInput } = useContext(UrlParamInputContext);
 
-  const [fundInputItems, setFundInputItems] = useState<FundInputItem[]>(urlParamsInput.fundInputItemStrings ? urlParamsInput.fundInputItemStrings.map(fromStrings) : initialInputState.fundInputItems);
+  const [fundInputItems, setFundInputItems] = useState<FundInputItem[]>(urlParamsInput.length > 0 ? urlParamsInput.map(fromStrings) : initialInputState.fundInputItems);
 
   const [fundInputItemStrings, setFundInputItemStrings] = useState<FundInputItemStrings[]>(fundInputItems.map(toStrings));
 
   const fundInputItemSetters: FundInputItemSetter[] = fundInputItemStrings.map((fundInputItemString, index) => {
     return {
+      internalId: index,
       nameSetters: {
         stringValue: fundInputItemString.nameString,
         setStringValue: setItemProperty(index, fundInputItemStrings => fundInputItemStrings.nameString, (fundInputItemStrings, nameString) => { return { ...fundInputItemStrings, nameString } }, setFundInputItemStrings),
@@ -131,6 +135,7 @@ const InputProvider = ({ children }: PropsWithChildren<{}>) => {
   });
 
   const defaultItem = {
+    internalId: fundInputItems.length,
     name: "",
     currentBalance: ZERO,
     targetPercent: ZERO

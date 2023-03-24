@@ -23,12 +23,16 @@ export const isBig = (value: string) => {
   }
 };
 
+export const setBigFromString = (stringValue: string, setStringValue: Dispatch<SetStateAction<string>>, setBigValue: Dispatch<SetStateAction<Big>>) => {
+  setStringValue(stringValue);
+  if (isBig(stringValue)) {
+    setBigValue(new Big(stringValue));
+  }
+};
+
 export const setBigFromInput = (setStringValue: Dispatch<SetStateAction<string>>, setBigValue: Dispatch<SetStateAction<Big>>) => {
   return (event: React.ChangeEvent<HTMLInputElement>) => {
-    setStringValue(event.target.value);
-    if (isBig(event.target.value)) {
-      setBigValue(new Big(event.target.value));
-    }
+    setBigFromString(event.target.value, setStringValue, setBigValue);
   }
 };
 

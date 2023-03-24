@@ -8,11 +8,11 @@ import BigFieldProps, { BigFieldSettersKeys } from './BigFieldProps';
 
 const MAX_PERCENTAGE = 100;
 
-const isValidPercentage = (percentage: Big): boolean => {
+export const isValidPercentage = (percentage: Big): boolean => {
   return ZERO.lte(percentage) && percentage.lte(MAX_PERCENTAGE);
 }
 
-const setPercentage = (setBigValue: Dispatch<SetStateAction<Big>>) =>
+export const setPercentage = (setBigValue: Dispatch<SetStateAction<Big>>) =>
   setTransform(
     setBigValue,
     value => ONE_HUNDREDTH.times(value),

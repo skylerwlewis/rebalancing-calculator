@@ -1,31 +1,31 @@
 import { createContext, PropsWithChildren, useMemo, } from 'react';
 import { useLocation } from 'react-router-dom';
-import { InputUrlParams } from './InputProvider';
+import { FundInputItemStrings } from './InputProvider';
 import LZString from 'lz-string';
 
 type UrlParamInputContextState = {
   baseUrl: string;
   queryStrings: string;
-  urlParamsInput: InputUrlParams;
+  urlParamsInput: FundInputItemStrings[];
 }
 
 const initialInputState: UrlParamInputContextState = {
   baseUrl: '',
   queryStrings: '',
-  urlParamsInput: {}
+  urlParamsInput: []
 };
 
-const getParsedInput = (urlParamsInputString: string | null): InputUrlParams => {
-  if(!urlParamsInputString) { 
-    return {};
+const getParsedInput = (urlParamsInputString: string | null): FundInputItemStrings[] => {
+  if (!urlParamsInputString) {
+    return [];
   }
   try {
     const decompressedJsonString = LZString.decompressFromEncodedURIComponent(urlParamsInputString);
     return decompressedJsonString === null ? {} : JSON.parse(decompressedJsonString);
-  } catch(error) {
-    return {};
+  } catch (error) {
+    return [];
   }
-  
+
 }
 
 export const UrlParamInputContext = createContext<UrlParamInputContextState>(initialInputState);
@@ -39,8 +39,8 @@ const UrlParamInputProvider = ({ children }: PropsWithChildren<{}>) => {
   const urlParamsInputStringValue = useMemo(() => {
     const inputString = new URLSearchParams(locationSearch).get('input');
     return !inputString ? null : inputString.replaceAll(' ', '+');
-}, [locationSearch]);
-  const urlParamsInput: InputUrlParams = useMemo(() => getParsedInput(urlParamsInputStringValue), [urlParamsInputStringValue]);
+  }, [locationSearch]);
+  const urlParamsInput: FundInputItemStrings[] = useMemo(() => getParsedInput(urlParamsInputStringValue), [urlParamsInputStringValue]);
 
   const queryStrings = useMemo(() => {
     const queryString = locationSearch.replace(!urlParamsInputStringValue ? '' : 'input=' + urlParamsInputStringValue, '').replace('&&', '&').replace('?', '');
