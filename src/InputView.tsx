@@ -2,8 +2,8 @@ import { Box, Button, Typography } from '@mui/material';
 import { useContext, useMemo, useState } from 'react';
 import MoneyField from './MoneyField';
 import { isValidPercentage, setPercentage } from './PercentField';
-import { InputContext } from './InputProvider'
-import calculate, { fromFundInputItem } from './Calculator';
+import { FundInputItemStrings, InputContext } from './InputProvider'
+import calculate, { CalculatorOutput, fromFundInputItem } from './Calculator';
 import Big from 'big.js';
 import { sum } from './BigUtils';
 import { DataGrid, GridPreProcessEditCellProps, GridActionsCellItem, GridRowParams, GridRenderCellParams, GridTreeNodeWithRender } from '@mui/x-data-grid';
@@ -32,33 +32,40 @@ const InputView = () => {
       fundInputItems: fundInputItems.map(fromFundInputItem)
     }
   }, [amountToInvest, fundInputItems]);
-  const calculateResults = useMemo(() => calculate(calcInput), [calcInput]);
+  const calculateResults: CalculatorOutput = useMemo(() => calculate(calcInput), [calcInput]);
 
-  const calculatedTotal = sum(...calculateResults);
+  const calculatedValues = calculateResults.outputItems.map(c => c.calculatedValue);
+  const calculatedTotal = sum(...calculatedValues);
+  const balanceAfters = calculateResults.outputItems.map(c => c.balanceAfter);
+  const balanceAftersTotal = sum(...balanceAfters);
+  const percentAfters = calculateResults.outputItems.map(c => c.percentAfter);
+  const percentAftersTotal = sum(...percentAfters);
 
-  type TableStrings = {
-    internalId: number,
-    name: string,
-    currentBalance: string,
-    targetPercent: string,
-    calculatedValue: string
+  interface TableStrings extends FundInputItemStrings {
+    calculatedValueString: string,
+    balanceAfterString: string,
+    percentAfterString: string
   }
 
   const initialTableData: TableStrings[] = [
     {
       internalId: -1,
-      name: "Total",
-      currentBalance: sum(...fundInputItems.map(i => i.currentBalance)).toString(),
-      targetPercent: ONE_HUNDRED.times(sum(...fundInputItems.map(i => i.targetPercent))).toString(),
-      calculatedValue: calculatedTotal.toString()
+      nameString: "Total",
+      currentBalanceString: sum(...fundInputItems.map(i => i.currentBalance)).toString(),
+      targetPercentString: ONE_HUNDRED.times(sum(...fundInputItems.map(i => i.targetPercent))).toString(),
+      calculatedValueString: calculatedTotal.toString(),
+      balanceAfterString: balanceAftersTotal.toString(),
+      percentAfterString: ONE_HUNDRED.times(percentAftersTotal).toFixed(3)
     },
   ...fundInputItems.map((fundInputItem, index) => {
     return {
       internalId: fundInputItem.internalId,
-      name: fundInputItem.name,
-      currentBalance: fundInputItem.currentBalance.toString(),
-      targetPercent: ONE_HUNDRED.times(fundInputItem.targetPercent).toString(),
-      calculatedValue: calculateResults[index].toString()
+      nameString: fundInputItem.name,
+      currentBalanceString: fundInputItem.currentBalance.toString(),
+      targetPercentString: ONE_HUNDRED.times(fundInputItem.targetPercent).toString(),
+      calculatedValueString: calculatedValues[index].toString(),
+      balanceAfterString: balanceAfters[index].toString(),
+      percentAfterString: ONE_HUNDRED.times(percentAfters[index]).toFixed(3)
     }
   })
 ];
@@ -97,13 +104,13 @@ const InputView = () => {
           <DataGrid
             columns={[
               {
-                field: 'name',
+                field: 'nameString',
                 headerName: 'Fund Name',
                 editable: true,
                 renderCell: renderValue
               },
               {
-                field: 'currentBalance',
+                field: 'currentBalanceString',
                 headerName: 'Current Balance',
                 editable: true,
                 valueFormatter: ({ value }) => currencyFormatter.format(value),
@@ -114,7 +121,7 @@ const InputView = () => {
                 renderCell: renderValue
               },
               {
-                field: 'targetPercent',
+                field: 'targetPercentString',
                 headerName: 'Target Percent',
                 editable: true,
                 valueFormatter: ({ value }) => value + "%",
@@ -126,9 +133,21 @@ const InputView = () => {
                 renderCell: renderValue
               },
               {
-                field: 'calculatedValue',
+                field: 'calculatedValueString',
                 headerName: 'Amount to Invest',
                 valueFormatter: ({ value }) => currencyFormatter.format(value),
+                renderCell: renderValue
+              },
+              {
+                field: 'balanceAfterString',
+                headerName: 'Balance After Investment',
+                valueFormatter: ({ value }) => currencyFormatter.format(value),
+                renderCell: renderValue
+              },
+              {
+                field: 'percentAfterString',
+                headerName: 'Percent After Investment',
+                valueFormatter: ({ value }) => value + "%",
                 renderCell: renderValue
               },
               {
@@ -158,10 +177,10 @@ const InputView = () => {
             processRowUpdate={(newRow: TableStrings, oldRow: TableStrings) => {
               const setters = fundInputItemSetters.filter(item => item.internalId === oldRow.internalId);
               for(const setter of setters) {
-                setter.nameSetters.setStringValue(newRow.name);
-                setter.nameSetters.setRealStringValue(newRow.name);
-                setBigFromString(newRow.currentBalance, setter.currentBalanceSetters.setStringValue, setter.currentBalanceSetters.setBigValue);
-                setBigFromString(newRow.targetPercent, setter.targetPercentSetters.setStringValue, setIf(isValidPercentage, setPercentage(setter.targetPercentSetters.setBigValue)));
+                setter.nameSetters.setStringValue(newRow.nameString);
+                setter.nameSetters.setRealStringValue(newRow.nameString);
+                setBigFromString(newRow.currentBalanceString, setter.currentBalanceSetters.setStringValue, setter.currentBalanceSetters.setBigValue);
+                setBigFromString(newRow.targetPercentString, setter.targetPercentSetters.setStringValue, setIf(isValidPercentage, setPercentage(setter.targetPercentSetters.setBigValue)));
               }
               return newRow;
             }}
