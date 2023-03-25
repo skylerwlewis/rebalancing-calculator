@@ -3,15 +3,31 @@ import { ONE, ZERO } from "./BigConstants";
 import { max, min, sum } from "./BigUtils";
 import FundInputItem from "./FundInputItem";
 
-const calculate = (amountToInvest: Big, fundInputItems: FundInputItem[]): Big[] => {
+
+interface CalcFundItem {
+  currentBalance: Big;
+  targetPercent: Big;
+}
+interface CalculatorInput {
+  amountToInvest: Big,
+  fundInputItems: CalcFundItem[]
+}
+
+export const fromFundInputItem = (item: FundInputItem): CalcFundItem => {
+  return { currentBalance: item.currentBalance, targetPercent: item.targetPercent }
+}
+
+const calculate = ({amountToInvest, fundInputItems}: CalculatorInput): Big[] => {
+
+  if(fundInputItems.length === 0) { return [] }
 
   const targetPercents = fundInputItems.map(fundInputItem => fundInputItem.targetPercent);
   const totalTargetPercents = sum(...targetPercents);
   const fixedTargetPercents = ONE.gte(totalTargetPercents) ? targetPercents : fundInputItems.map(fundInputItem => fundInputItem.targetPercent.div(totalTargetPercents));
 
   const totalCurrentBalance = sum(...fundInputItems.map(fundInputItem => fundInputItem.currentBalance));
-  const currentPercents = fundInputItems.map(fundInputItem => fundInputItem.currentBalance.div(totalCurrentBalance));
-  const percentDifferences = fundInputItems.map((fundInputItem, index) => ZERO.eq(fixedTargetPercents[index]) ? ZERO : currentPercents[index].minus(fixedTargetPercents[index]).div(fixedTargetPercents[index]));
+  const currentPercents = ZERO.eq(totalCurrentBalance) ? new Array(fundInputItems.length).fill(ZERO) : fundInputItems.map(fundInputItem => fundInputItem.currentBalance.div(totalCurrentBalance));
+  const percentDifferences = fixedTargetPercents.map((fixedTargetPercent, index) => ZERO.eq(fixedTargetPercent) ? ZERO : currentPercents[index].minus(fixedTargetPercent).div(fixedTargetPercent));
 
   const maxPercentDifference = max(...percentDifferences);
   const maxPercentDifferenceIndex = percentDifferences.indexOf(maxPercentDifference);
@@ -22,10 +38,10 @@ const calculate = (amountToInvest: Big, fundInputItems: FundInputItem[]): Big[] 
   const balanceDifferences = fundInputItems.map((fundInputItem, index) => targetBalances[index].minus(fundInputItem.currentBalance));
 
   const balanceDifferenceTotal = sum(...balanceDifferences);
-  const differenceScaled = ZERO.eq(balanceDifferenceTotal) ? new Array(fundInputItems.length).fill(ZERO) : balanceDifferences.map(balanceDifference => min(balanceDifference, amountToInvest.times(balanceDifference).div(balanceDifferenceTotal)));
+  const differenceScaled = ZERO.eq(balanceDifferenceTotal) ? new Array(balanceDifferences.length).fill(ZERO) : balanceDifferences.map(balanceDifference => min(balanceDifference, amountToInvest.times(balanceDifference).div(balanceDifferenceTotal)));
   const differenceScaledTotal = sum(...differenceScaled);
 
-  const plusExtra = fundInputItems.map((fundInputItem, index) => amountToInvest.minus(differenceScaledTotal).times(fixedTargetPercents[index]));
+  const plusExtra = fixedTargetPercents.map(fixedTargetPercent => amountToInvest.minus(differenceScaledTotal).times(fixedTargetPercent));
 
   const subtotal = plusExtra.map((extra, index) => extra.plus(differenceScaled[index]).round(2));
 
