@@ -1,7 +1,7 @@
 import { Box, Button, Typography } from '@mui/material';
 import { useContext, useMemo, useState } from 'react';
 import MoneyField from './MoneyField';
-import { isValidPercentage, setPercentage } from './PercentField';
+import { isValidPercentage, setPercentage } from './PercentUtils';
 import { FundInputItemStrings, InputContext } from './InputProvider'
 import calculate, { CalculatorOutput, fromFundInputItem } from './Calculator';
 import Big from 'big.js';
@@ -76,7 +76,18 @@ const InputView = () => {
         percentAfterString: ONE_HUNDRED.times(percentAfters[index]).round(3).toFixed(3)
       }
     })
-  ], [fundInputItems, currentPercentsTotal, totalTargetPercent, calculatedTotal, balanceAftersTotal, percentAftersTotal, currentPercents, calculatedValues, balanceAfters, percentAfters]);
+  ], [
+    fundInputItems, 
+    currentPercentsTotal, 
+    totalTargetPercent, 
+    calculatedTotal, 
+    balanceAftersTotal, 
+    percentAftersTotal, 
+    currentPercents,
+    calculatedValues, 
+    balanceAfters, 
+    percentAfters
+  ]);
 
   const currencyFormatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
