@@ -15,6 +15,7 @@ interface CalculatorInput {
 
 export interface CalcOutputItem {
   calculatedValue: Big,
+  currentPercent: Big,
   balanceAfter: Big,
   percentAfter: Big
 }
@@ -67,6 +68,7 @@ const calculate = ({amountToInvest, fundInputItems}: CalculatorInput): Calculato
   return { outputItems: fixedTotals.map((fixedTotal, index) => {
     return {
       calculatedValue: fixedTotal,
+      currentPercent: currentPercents[index],
       balanceAfter: balanceAfters[index],
       percentAfter: percentAfters[index]
     }
