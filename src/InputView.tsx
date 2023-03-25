@@ -93,14 +93,6 @@ const InputView = () => {
           setStringValue={setAmountToInvestString}
           setBigValue={setAmountToInvest} />
 
-        <MoneyField
-          disabled={true}
-          id='investment-amount-input2'
-          label='Investment Amount Totes'
-          stringValue={calculatedTotal.toString()}
-          setStringValue={() => { }}
-          setBigValue={() => { }} />
-
         <div style={{ height: 500, width: '100%' }}>
           <DataGrid
             columns={[
