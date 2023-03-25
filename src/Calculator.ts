@@ -3,14 +3,35 @@ import { ONE, ZERO } from "./BigConstants";
 import { max, min, sum } from "./BigUtils";
 import FundInputItem from "./FundInputItem";
 
-const calculate = (amountToInvest: Big, fundInputItems: FundInputItem[]): Big[] => {
+
+interface CalcFundItem {
+  currentBalance: Big;
+  targetPercent: Big;
+}
+interface CalculatorInput {
+  amountToInvest: Big,
+  fundInputItems: CalcFundItem[]
+}
+
+interface CalcOutputItem {
+  amountToInvest: Big,
+  
+}
+
+export const fromFundInputItem = (item: FundInputItem): CalcFundItem => {
+  return { currentBalance: item.currentBalance, targetPercent: item.targetPercent }
+}
+
+const calculate = ({amountToInvest, fundInputItems}: CalculatorInput): Big[] => {
+
+  if(fundInputItems.length === 0) { return [] }
 
   const targetPercents = fundInputItems.map(fundInputItem => fundInputItem.targetPercent);
   const totalTargetPercents = sum(...targetPercents);
   const fixedTargetPercents = ONE.gte(totalTargetPercents) ? targetPercents : fundInputItems.map(fundInputItem => fundInputItem.targetPercent.div(totalTargetPercents));
 
   const totalCurrentBalance = sum(...fundInputItems.map(fundInputItem => fundInputItem.currentBalance));
-  const currentPercents = fundInputItems.map(fundInputItem => fundInputItem.currentBalance.div(totalCurrentBalance));
+  const currentPercents = ZERO.eq(totalCurrentBalance) ? new Array(fundInputItems.length).fill(ZERO) : fundInputItems.map(fundInputItem => fundInputItem.currentBalance.div(totalCurrentBalance));
   const percentDifferences = fixedTargetPercents.map((fixedTargetPercent, index) => ZERO.eq(fixedTargetPercent) ? ZERO : currentPercents[index].minus(fixedTargetPercent).div(fixedTargetPercent));
 
   const maxPercentDifference = max(...percentDifferences);

@@ -1,5 +1,5 @@
 import { Big } from 'big.js';
-import { createContext, PropsWithChildren, useContext, useState } from 'react';
+import { createContext, PropsWithChildren, useContext, useMemo, useState } from 'react';
 import { ONE_HUNDRED, ONE_HUNDREDTH, ZERO } from './BigConstants';
 import { BigFieldSetters } from './BigFieldProps';
 import FundInputItem from './FundInputItem';
@@ -9,6 +9,7 @@ import { UrlParamInputContext } from './UrlParamInputProvider';
 
 //Interfaces for objects we need to hold in state
 export interface FundInputItemStrings {
+  internalId: number;
   nameString: string;
   currentBalanceString: string;
   targetPercentString: string;
@@ -88,15 +89,16 @@ const initialInputState: InputContextState = {
 
 export const toStrings = (fundInputItem: FundInputItem): FundInputItemStrings => {
   return {
+    internalId: fundInputItem.internalId,
     nameString: fundInputItem.name,
     currentBalanceString: fundInputItem.currentBalance.toString(),
     targetPercentString: ONE_HUNDRED.times(fundInputItem.targetPercent).toString()
   }
 }
 
-export const fromStrings = (fundInputItemStrings: FundInputItemStrings, index: number): FundInputItem => {
+export const fromStrings = (fundInputItemStrings: FundInputItemStrings): FundInputItem => {
   return {
-    internalId: index,
+    internalId: fundInputItemStrings.internalId,
     name: fundInputItemStrings.nameString,
     currentBalance: new Big(fundInputItemStrings.currentBalanceString),
     targetPercent: ONE_HUNDREDTH.times(new Big(fundInputItemStrings.targetPercentString))
@@ -115,7 +117,7 @@ const InputProvider = ({ children }: PropsWithChildren<{}>) => {
 
   const fundInputItemSetters: FundInputItemSetter[] = fundInputItemStrings.map((fundInputItemString, index) => {
     return {
-      internalId: index,
+      internalId: fundInputItemString.internalId,
       nameSetters: {
         stringValue: fundInputItemString.nameString,
         setStringValue: setItemProperty(index, fundInputItemStrings => fundInputItemStrings.nameString, (fundInputItemStrings, nameString) => { return { ...fundInputItemStrings, nameString } }, setFundInputItemStrings),
@@ -134,27 +136,25 @@ const InputProvider = ({ children }: PropsWithChildren<{}>) => {
     }
   });
 
-  const defaultItem = {
-    internalId: fundInputItems.length,
-    name: "",
-    currentBalance: ZERO,
-    targetPercent: ZERO
-  };
-  const strings = toStrings(defaultItem);
+  const [maxInternalId, setMaxInternalId] = useState<number>(Math.max(...fundInputItems.map(item => item.internalId)));
+  const nextItem = useMemo(() => {
+    return {
+      internalId: maxInternalId + 1,
+      name: "New Fund",
+      currentBalance: ZERO,
+      targetPercent: ZERO
+    }
+  }, [maxInternalId]);
+  const nextItemStrings = useMemo(() => toStrings(nextItem), [nextItem]);
   const addFundInputItem = () => {
-    setFundInputItems([...fundInputItems, defaultItem]);
-    setFundInputItemStrings([...fundInputItemStrings, strings]);
+    setFundInputItems([...fundInputItems, nextItem]);
+    setFundInputItemStrings([...fundInputItemStrings, nextItemStrings]);
+    setMaxInternalId(nextItem.internalId);
   }
 
-  const removeFundInputItem = (index: number) => {
-    setFundInputItems([
-      ...fundInputItems.slice(0, index),
-      ...fundInputItems.slice(index + 1)
-    ]);
-    setFundInputItemStrings([
-      ...fundInputItemStrings.slice(0, index),
-      ...fundInputItemStrings.slice(index + 1)
-    ]);
+  const removeFundInputItem = (internalId: number) => {
+    setFundInputItems(fundInputItems.filter(fundInputItem => fundInputItem.internalId !== internalId));
+    setFundInputItemStrings(fundInputItemStrings.filter(fundInputItemString => fundInputItemString.internalId !== internalId));
   }
 
   return (

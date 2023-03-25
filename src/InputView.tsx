@@ -1,18 +1,18 @@
-import { Box, Button, TextField, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import { useContext, useMemo, useState } from 'react';
 import MoneyField from './MoneyField';
-import PercentField, { isValidPercentage, setPercentage } from './PercentField';
-import { FundInputItemSetter, InputContext } from './InputProvider'
-import calculate from './Calculator';
+import { isValidPercentage, setPercentage } from './PercentField';
+import { InputContext } from './InputProvider'
+import calculate, { fromFundInputItem } from './Calculator';
 import Big from 'big.js';
 import { sum } from './BigUtils';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { UrlParamInputContext } from './UrlParamInputProvider';
-import { InputUrlParamContext } from './InputUrlParamProvider';
-
-import { DataGrid, GridCellParams, GridPreProcessEditCellProps, MuiBaseEvent, MuiEvent } from '@mui/x-data-grid';
+import { DataGrid, GridPreProcessEditCellProps, GridActionsCellItem, GridRowParams, GridRenderCellParams, GridTreeNodeWithRender } from '@mui/x-data-grid';
 import { setIf } from './SetUtils';
-import { isBig, setBigFromInput, setBigFromString } from './InputUtils';
+import { isBig, setBigFromString } from './InputUtils';
+import { ONE_HUNDRED } from './BigConstants';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ShareModal from './ShareModal';
+import ShareIcon from '@mui/icons-material/Share';
 
 
 const boxSx = {
@@ -21,19 +21,18 @@ const boxSx = {
 
 const InputView = () => {
 
-  const { baseUrl, queryStrings } = useContext(UrlParamInputContext);
-  const { inputUrlJsonString } = useContext(InputUrlParamContext);
-
-  const linkUrl = useMemo(() => encodeURI(baseUrl + '?' + queryStrings + 'input=' + inputUrlJsonString), [baseUrl, queryStrings, inputUrlJsonString]);
-
-  const copyTextToClipboard = (text: string) => navigator.clipboard.writeText(text);
-
   const { fundInputItemSetters, fundInputItems, addFundInputItem, removeFundInputItem } = useContext(InputContext);
 
   const [amountToInvest, setAmountToInvest] = useState<Big>(new Big('5000'));
   const [amountToInvestString, setAmountToInvestString] = useState<string>(amountToInvest.toString());
 
-  const calculateResults = calculate(amountToInvest, fundInputItems);
+  const calcInput = useMemo(() => {
+    return {
+      amountToInvest: amountToInvest,
+      fundInputItems: fundInputItems.map(fromFundInputItem)
+    }
+  }, [amountToInvest, fundInputItems]);
+  const calculateResults = useMemo(() => calculate(calcInput), [calcInput]);
 
   const calculatedTotal = sum(...calculateResults);
 
@@ -41,16 +40,40 @@ const InputView = () => {
     internalId: number,
     name: string,
     currentBalance: string,
-    targetPercent: string
+    targetPercent: string,
+    calculatedValue: string
   }
-  const stringTableData: TableStrings[] = fundInputItemSetters.map(setter => {
+
+  const initialTableData: TableStrings[] = [
+    {
+      internalId: -1,
+      name: "Total",
+      currentBalance: sum(...fundInputItems.map(i => i.currentBalance)).toString(),
+      targetPercent: ONE_HUNDRED.times(sum(...fundInputItems.map(i => i.targetPercent))).toString(),
+      calculatedValue: calculatedTotal.toString()
+    },
+  ...fundInputItems.map((fundInputItem, index) => {
     return {
-      internalId: setter.internalId,
-      name: setter.nameSetters.stringValue,
-      currentBalance: setter.currentBalanceSetters.stringValue,
-      targetPercent: setter.targetPercentSetters.stringValue
+      internalId: fundInputItem.internalId,
+      name: fundInputItem.name,
+      currentBalance: fundInputItem.currentBalance.toString(),
+      targetPercent: ONE_HUNDRED.times(fundInputItem.targetPercent).toString(),
+      calculatedValue: calculateResults[index].toString()
     }
   })
+];
+
+  const currencyFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  });
+
+  const renderValue = (params: GridRenderCellParams<TableStrings, any, any, GridTreeNodeWithRender>) => {
+    return params.row.internalId === -1 ? (<strong>{params.formattedValue}</strong>) : params.formattedValue;
+  };
+
+  const [openModal, setOpenModal] = useState<string | boolean>(false);
+  const handleClose = () => setOpenModal(false);
 
   return (
     <Box
@@ -85,107 +108,76 @@ const InputView = () => {
                 field: 'name',
                 headerName: 'Fund Name',
                 editable: true,
-                preProcessEditCellProps: (params: GridPreProcessEditCellProps) => {
-                  const hasError = params.props.value.length < 3;
-                  return { ...params.props, error: hasError };
-                }
+                renderCell: renderValue
               },
               {
                 field: 'currentBalance',
                 headerName: 'Current Balance',
                 editable: true,
+                valueFormatter: ({ value }) => currencyFormatter.format(value),
                 preProcessEditCellProps: (params: GridPreProcessEditCellProps) => {
                   const hasError = !isBig(params.props.value);
                   return { ...params.props, error: hasError };
-                }
+                },
+                renderCell: renderValue
               },
               {
                 field: 'targetPercent',
                 headerName: 'Target Percent',
                 editable: true,
+                valueFormatter: ({ value }) => value + "%",
                 preProcessEditCellProps: (params: GridPreProcessEditCellProps) => {
                   const isBigValue = isBig(params.props.value);
                   const validPercent = isBigValue ? isValidPercentage(new Big(params.props.value)) : false
                   return { ...params.props, error: !validPercent };
-                }
-              }
+                },
+                renderCell: renderValue
+              },
+              {
+                field: 'calculatedValue',
+                headerName: 'Amount to Invest',
+                valueFormatter: ({ value }) => currencyFormatter.format(value),
+                renderCell: renderValue
+              },
+              {
+                field: 'actions',
+                headerName: 'Actions',
+                type: 'actions',
+                width: 80,
+                getActions: (params: GridRowParams<TableStrings>) => {
+                  if(params.row.internalId === -1) {
+                    return []
+                  } else {
+                    return [
+                      <GridActionsCellItem
+                        icon={<DeleteIcon />}
+                        label="Delete"
+                        onClick={() => removeFundInputItem(params.row.internalId)}
+                      />,
+                    ]
+                  }
+              },
+              },
+              
             ]}
             getRowId={(row) => row.internalId}
-            rows={stringTableData}
-            onCellEditStop={(params: GridCellParams, event: MuiEvent<MuiBaseEvent>) => {
-              const setter: FundInputItemSetter[] = fundInputItemSetters.filter( (s) => {
-                return s.internalId === params.row.internalId;
-              });
-              if(setter.length === 1) {
-                if (params.field === 'name') {
-
-                } else if (params.field === 'currentBalance') {
-                  setBigFromInput(setter[0].currentBalanceSetters.setStringValue, setter[0].currentBalanceSetters.setBigValue)
-                } else if (params.field === 'targetPercent') {
-                  setBigFromInput(setter[0].targetPercentSetters.setStringValue, setIf(isValidPercentage, setPercentage(setter[0].targetPercentSetters.setBigValue)))
-                }
-              }
-            }}
+            rows={initialTableData}
+            isCellEditable={(params) => params.row.internalId !== -1}
             processRowUpdate={(newRow: TableStrings, oldRow: TableStrings) => {
-
-              const setter: FundInputItemSetter[] = fundInputItemSetters.filter( (s) => {
-                return s.internalId === oldRow.internalId;
-              });
-
-              if(setter.length === 1) {
-                setter[0].nameSetters.setStringValue(newRow.name);
-                setter[0].nameSetters.setRealStringValue(newRow.name);
-                setBigFromString(newRow.currentBalance, setter[0].currentBalanceSetters.setStringValue, setter[0].currentBalanceSetters.setBigValue);
-                setBigFromString(newRow.targetPercent, setter[0].targetPercentSetters.setStringValue, setIf(isValidPercentage, setPercentage(setter[0].targetPercentSetters.setBigValue)));
-                return newRow;
+              const setters = fundInputItemSetters.filter(item => item.internalId === oldRow.internalId);
+              for(const setter of setters) {
+                setter.nameSetters.setStringValue(newRow.name);
+                setter.nameSetters.setRealStringValue(newRow.name);
+                setBigFromString(newRow.currentBalance, setter.currentBalanceSetters.setStringValue, setter.currentBalanceSetters.setBigValue);
+                setBigFromString(newRow.targetPercent, setter.targetPercentSetters.setStringValue, setIf(isValidPercentage, setPercentage(setter.targetPercentSetters.setBigValue)));
               }
-              return oldRow;
+              return newRow;
             }}
           />
+          <Button onClick={() => { addFundInputItem() }}>Add new item</Button>
+          <Button onClick={() => setOpenModal('share')}><ShareIcon /></Button>
+        <ShareModal open={openModal === 'share'} handleClose={handleClose} />
         </div>
-
-        {fundInputItemSetters.map((fundInputItemSetter, index) =>
-
-          <p>
-            <TextField
-              id='fund-name-input'
-              label='Fund Name'
-              value={fundInputItemSetter.nameSetters.stringValue}
-              onChange={
-                (event: React.ChangeEvent<HTMLInputElement>) => {
-                  fundInputItemSetter.nameSetters.setStringValue(event.target.value);
-                  fundInputItemSetter.nameSetters.setRealStringValue(event.target.value);
-                }
-              } />
-            <MoneyField
-              id='current-balance-input'
-              label='Current Balance'
-              {...fundInputItemSetter.currentBalanceSetters} />
-            <PercentField
-              id='current-percent-input'
-              label='Target Percent'
-              {...fundInputItemSetter.targetPercentSetters} />
-            <text>{calculateResults[index].toFixed(2)}</text>
-            <Button onClick={() => { removeFundInputItem(index) }}>Remove</Button>
-
-          </p>
-        )}
-
-        <Button onClick={() => { addFundInputItem() }}>Add new item</Button>
-        <Typography id='ss-modal-modal-title' variant='h4' component='h2' gutterBottom>
-          Share or Bookmark Your Results
-        </Typography>
-        <Typography id='ss-modal-modal-title' variant='h6' component='h2'>
-          URL to share
-        </Typography>
-        <TextField
-          style={{ width: '100%' }}
-          disabled={true}
-          value={linkUrl}
-          InputProps={{
-            endAdornment: <Button onClick={() => copyTextToClipboard(linkUrl)}><ContentCopyIcon /></Button>
-          }}
-        />
       </>
     </Box>
   );
