@@ -13,13 +13,23 @@ interface CalculatorInput {
   fundInputItems: CalcFundItem[]
 }
 
+export interface CalcOutputItem {
+  calculatedValue: Big,
+  balanceAfter: Big,
+  percentAfter: Big
+}
+
+export interface CalculatorOutput {
+  outputItems: CalcOutputItem[]
+}
+
 export const fromFundInputItem = (item: FundInputItem): CalcFundItem => {
   return { currentBalance: item.currentBalance, targetPercent: item.targetPercent }
 }
 
-const calculate = ({amountToInvest, fundInputItems}: CalculatorInput): Big[] => {
+const calculate = ({amountToInvest, fundInputItems}: CalculatorInput): CalculatorOutput => {
 
-  if(fundInputItems.length === 0) { return [] }
+  if(fundInputItems.length === 0) { return { outputItems: [] } }
 
   const targetPercents = fundInputItems.map(fundInputItem => fundInputItem.targetPercent);
   const totalTargetPercents = sum(...targetPercents);
@@ -50,7 +60,17 @@ const calculate = ({amountToInvest, fundInputItems}: CalculatorInput): Big[] => 
 
   const fixedTotals = [...subtotal.slice(0, maxTotalIndex), maxTotal.minus(sum(...subtotal)).plus(amountToInvest), ...subtotal.slice(maxTotalIndex + 1)];
 
-  return fixedTotals;
+  const balanceAfters = fixedTotals.map((fixedTotal, index) => fixedTotal.plus(fundInputItems[index].currentBalance));
+  const balanceAftersTotal = sum(...balanceAfters);
+  const percentAfters = ZERO.eq(balanceAftersTotal) ? new Array(balanceAfters.length).fill(ZERO) : balanceAfters.map(balanceAfter => balanceAfter.div(balanceAftersTotal));
+
+  return { outputItems: fixedTotals.map((fixedTotal, index) => {
+    return {
+      calculatedValue: fixedTotal,
+      balanceAfter: balanceAfters[index],
+      percentAfter: percentAfters[index]
+    }
+  }) };
 };
 
 export default calculate;
