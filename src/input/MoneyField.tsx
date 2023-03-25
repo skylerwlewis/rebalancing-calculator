@@ -2,7 +2,7 @@ import { BaseTextFieldProps, InputAdornment, TextField } from '@mui/material';
 import BigFieldProps, { BigFieldSettersKeys } from './BigFieldProps';
 import { Dispatch, SetStateAction } from 'react';
 import Big from 'big.js';
-import { isBig, setBigFromString } from './BigUtils';
+import { isBig, setBigFromString } from '../utils/BigUtils';
 
 export const setBigFromInput = (setStringValue: Dispatch<SetStateAction<string>>, setBigValue: Dispatch<SetStateAction<Big>>) => {
   return (event: React.ChangeEvent<HTMLInputElement>) => {

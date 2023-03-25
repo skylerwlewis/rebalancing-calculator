@@ -1,5 +1,5 @@
 import Big from "big.js";
-import FundInputItem from "../FundInputItem";
+import FundInputItem from "../input/FundInputItem";
 
 export interface InputUrlParams {
   name: string;

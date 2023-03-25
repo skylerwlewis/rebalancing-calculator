@@ -1,10 +1,10 @@
 import { useContext, useMemo } from 'react';
 import { Button, Modal, TextField, Typography } from '@mui/material';
-import ModalProps from '../ModalProps';
-import ModalBox from '../ModalBox';
+import ModalProps from './ModalProps';
+import ModalBox from './ModalBox';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { InputUrlParamContext } from './InputUrlParamProvider';
-import { UrlParamInputContext } from './UrlParamInputProvider';
+import { InputUrlParamContext } from '../InputUrlParamProvider';
+import { UrlParamInputContext } from '../UrlParamInputProvider';
 
 const ShareModal = ({
   open,

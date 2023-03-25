@@ -1,7 +1,7 @@
 import Big from "big.js";
 import { ONE, ZERO } from "./BigConstants";
-import { max, min, sum } from "./BigUtils";
-import FundInputItem from "./FundInputItem";
+import { max, min, sum } from "../utils/BigUtils";
+import FundInputItem from "../input/FundInputItem";
 
 
 interface CalcFundItem {

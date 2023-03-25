@@ -1,7 +1,7 @@
 
 import { Big } from 'big.js';
 import { Dispatch, SetStateAction } from 'react';
-import { ZERO } from './BigConstants';
+import { ZERO } from '../calculator/BigConstants';
 
 export const sum = (...values: Big[]) => values.reduce((prev, curr) => prev.plus(curr), ZERO);
 export const min = (...values: Big[]) => values.reduce((prev, curr) => prev.lt(curr) ? prev : curr);

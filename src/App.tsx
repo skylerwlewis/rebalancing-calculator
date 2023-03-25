@@ -1,6 +1,6 @@
 import './App.css';
-import InputProvider from './InputProvider';
-import InputView from './InputView';
+import InputProvider from './input/InputProvider';
+import InputView from './input/InputView';
 import UrlParamInputProvider from './share/UrlParamInputProvider';
 import InputUrlParamProvider from './share/InputUrlParamProvider';
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';

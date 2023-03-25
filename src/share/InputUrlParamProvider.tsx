@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { createContext, PropsWithChildren, useMemo } from 'react';
-import { InputContext } from '../InputProvider';
+import { InputContext } from '../input/InputProvider';
 import LZString from 'lz-string';
 import { InputUrlParams, toInputUrlParams } from './InputUrlParams';
 

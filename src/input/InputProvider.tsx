@@ -1,12 +1,12 @@
 import { Big } from 'big.js';
 import { createContext, PropsWithChildren, useContext, useMemo, useState } from 'react';
-import { ONE_HUNDREDTH, ZERO } from './BigConstants';
+import { ONE_HUNDREDTH, ZERO } from '../calculator/BigConstants';
 import { BigFieldSetters } from './BigFieldProps';
 import FundInputItem, { FundInputItemStrings, toStrings } from './FundInputItem';
-import { fromInputUrlParams } from './share/InputUrlParams';
-import { setItemProperty } from './SetUtils';
+import { fromInputUrlParams } from '../share/InputUrlParams';
+import { setItemProperty } from '../utils/SetUtils';
 import { StringFieldSetters } from './StringFieldProps';
-import { UrlParamInputContext } from './share/UrlParamInputProvider';
+import { UrlParamInputContext } from '../share/UrlParamInputProvider';
 export interface FundInputItemSetter {
   internalId: number,
   nameSetters: StringFieldSetters;

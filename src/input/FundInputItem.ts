@@ -1,5 +1,5 @@
 import Big from "big.js";
-import { ONE_HUNDRED } from "./BigConstants";
+import { ONE_HUNDRED } from "../calculator/BigConstants";
 
 export default interface FundInputItem {
   internalId: number;
