@@ -1,19 +1,18 @@
 import { Box, Button, Typography } from '@mui/material';
 import { useContext, useMemo, useState } from 'react';
 import MoneyField from './MoneyField';
-import { isValidPercentage, setPercentage } from './PercentField';
-import { FundInputItemStrings, InputContext } from './InputProvider'
-import calculate, { CalculatorOutput, fromFundInputItem } from './Calculator';
+import { isValidPercentage, setPercentage } from '../utils/PercentUtils';
+import { InputContext } from './InputProvider'
+import calculate, { CalculatorOutput, fromFundInputItem } from '../calculator/Calculator';
 import Big from 'big.js';
-import { sum } from './BigUtils';
+import { isBig, setBigFromString, sum } from '../utils/BigUtils';
 import { DataGrid, GridPreProcessEditCellProps, GridActionsCellItem, GridRowParams, GridRenderCellParams, GridTreeNodeWithRender, GridComparatorFn } from '@mui/x-data-grid';
-import { setIf } from './SetUtils';
-import { isBig, setBigFromString } from './InputUtils';
-import { ONE_HUNDRED } from './BigConstants';
+import { setIf } from '../utils/SetUtils';
+import { ONE_HUNDRED } from '../calculator/BigConstants';
 import DeleteIcon from '@mui/icons-material/Delete';
-import ShareModal from './ShareModal';
+import ShareModal from '../share/modal/ShareModal';
 import ShareIcon from '@mui/icons-material/Share';
-
+import { FundInputItemStrings } from './FundInputItem';
 
 const boxSx = {
   '& .MuiTextField-root': { m: 1, width: '25ch' },
@@ -34,6 +33,8 @@ const InputView = () => {
   }, [amountToInvest, fundInputItems]);
   const calculateResults: CalculatorOutput = useMemo(() => calculate(calcInput), [calcInput]);
 
+  const targetPercents = useMemo(() => fundInputItems.map(i => i.targetPercent), [fundInputItems]);
+  const totalTargetPercent = useMemo(() => sum(...targetPercents), [targetPercents]);
   const calculatedValues = useMemo(() => calculateResults.outputItems.map(c => c.calculatedValue), [calculateResults]);
   const calculatedTotal = useMemo(() => sum(...calculatedValues), [calculatedValues]);
   const currentPercents = useMemo(() => calculateResults.outputItems.map(c => c.currentPercent), [calculateResults]);
@@ -49,9 +50,6 @@ const InputView = () => {
     balanceAfterString: string,
     percentAfterString: string
   }
-
-  const targetPercents = useMemo(() => fundInputItems.map(i => i.targetPercent), [fundInputItems]);
-  const totalTargetPercent = useMemo(() => sum(...targetPercents), [targetPercents]);
 
   const initialTableData: TableStrings[] = useMemo(() => [
     {
@@ -76,7 +74,18 @@ const InputView = () => {
         percentAfterString: ONE_HUNDRED.times(percentAfters[index]).round(3).toFixed(3)
       }
     })
-  ], [fundInputItems, currentPercentsTotal, totalTargetPercent, calculatedTotal, balanceAftersTotal, percentAftersTotal, currentPercents, calculatedValues, balanceAfters, percentAfters]);
+  ], [
+    fundInputItems, 
+    currentPercentsTotal, 
+    totalTargetPercent, 
+    calculatedTotal, 
+    balanceAftersTotal, 
+    percentAftersTotal, 
+    currentPercents,
+    calculatedValues, 
+    balanceAfters, 
+    percentAfters
+  ]);
 
   const currencyFormatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -90,7 +99,7 @@ const InputView = () => {
   const [openModal, setOpenModal] = useState<string | boolean>(false);
   const handleClose = () => setOpenModal(false);
 
-  const bigStringComparator: GridComparatorFn<string> = (v1, v2) => Number(v1) - Number(v2);
+  const numericComparator: GridComparatorFn<string> = (v1, v2) => Number(v1) - Number(v2);
 
   return (
     <Box
@@ -132,7 +141,7 @@ const InputView = () => {
                 },
                 renderCell: renderValue,
                 flex: 1,
-                sortComparator: bigStringComparator
+                sortComparator: numericComparator
               },
               {
                 field: 'currentBalanceString',
@@ -145,7 +154,7 @@ const InputView = () => {
                 },
                 renderCell: renderValue,
                 flex: 1,
-                sortComparator: bigStringComparator
+                sortComparator: numericComparator
               },
               {
                 field: 'currentPercentString',
@@ -153,7 +162,7 @@ const InputView = () => {
                 valueFormatter: ({ value }) => value + "%",
                 renderCell: renderValue,
                 flex: 1,
-                sortComparator: bigStringComparator
+                sortComparator: numericComparator
               },
               {
                 field: 'calculatedValueString',
@@ -161,7 +170,7 @@ const InputView = () => {
                 valueFormatter: ({ value }) => currencyFormatter.format(value),
                 renderCell: renderValue,
                 flex: 1,
-                sortComparator: bigStringComparator
+                sortComparator: numericComparator
               },
               {
                 field: 'balanceAfterString',
@@ -169,7 +178,7 @@ const InputView = () => {
                 valueFormatter: ({ value }) => currencyFormatter.format(value),
                 renderCell: renderValue,
                 flex: 1,
-                sortComparator: bigStringComparator
+                sortComparator: numericComparator
               },
               {
                 field: 'percentAfterString',
@@ -177,7 +186,7 @@ const InputView = () => {
                 valueFormatter: ({ value }) => value + "%",
                 renderCell: renderValue,
                 flex: 1,
-                sortComparator: bigStringComparator
+                sortComparator: numericComparator
               },
               {
                 field: 'actions',
@@ -202,7 +211,6 @@ const InputView = () => {
               const setters = fundInputItemSetters.filter(item => item.internalId === oldRow.internalId);
               for(const setter of setters) {
                 setter.nameSetters.setStringValue(newRow.nameString);
-                setter.nameSetters.setRealStringValue(newRow.nameString);
                 setBigFromString(newRow.currentBalanceString, setter.currentBalanceSetters.setStringValue, setter.currentBalanceSetters.setBigValue);
                 setBigFromString(newRow.targetPercentString, setter.targetPercentSetters.setStringValue, setIf(isValidPercentage, setPercentage(setter.targetPercentSetters.setBigValue)));
               }
