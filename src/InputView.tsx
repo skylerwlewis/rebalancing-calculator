@@ -76,7 +76,7 @@ const InputView = () => {
         percentAfterString: ONE_HUNDRED.times(percentAfters[index]).round(3).toFixed(3)
       }
     })
-  ], [fundInputItems, totalTargetPercent, calculatedTotal, balanceAftersTotal, percentAftersTotal, calculatedValues, balanceAfters, percentAfters]);
+  ], [fundInputItems, currentPercentsTotal, totalTargetPercent, calculatedTotal, balanceAftersTotal, percentAftersTotal, currentPercents, calculatedValues, balanceAfters, percentAfters]);
 
   const currencyFormatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
