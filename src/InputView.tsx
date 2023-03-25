@@ -6,7 +6,7 @@ import { FundInputItemStrings, InputContext } from './InputProvider'
 import calculate, { CalculatorOutput, fromFundInputItem } from './Calculator';
 import Big from 'big.js';
 import { sum } from './BigUtils';
-import { DataGrid, GridPreProcessEditCellProps, GridActionsCellItem, GridRowParams, GridRenderCellParams, GridTreeNodeWithRender } from '@mui/x-data-grid';
+import { DataGrid, GridPreProcessEditCellProps, GridActionsCellItem, GridRowParams, GridRenderCellParams, GridTreeNodeWithRender, GridComparatorFn } from '@mui/x-data-grid';
 import { setIf } from './SetUtils';
 import { isBig, setBigFromString } from './InputUtils';
 import { ONE_HUNDRED } from './BigConstants';
@@ -34,41 +34,49 @@ const InputView = () => {
   }, [amountToInvest, fundInputItems]);
   const calculateResults: CalculatorOutput = useMemo(() => calculate(calcInput), [calcInput]);
 
-  const calculatedValues = calculateResults.outputItems.map(c => c.calculatedValue);
-  const calculatedTotal = sum(...calculatedValues);
-  const balanceAfters = calculateResults.outputItems.map(c => c.balanceAfter);
-  const balanceAftersTotal = sum(...balanceAfters);
-  const percentAfters = calculateResults.outputItems.map(c => c.percentAfter);
-  const percentAftersTotal = sum(...percentAfters);
+  const calculatedValues = useMemo(() => calculateResults.outputItems.map(c => c.calculatedValue), [calculateResults]);
+  const calculatedTotal = useMemo(() => sum(...calculatedValues), [calculatedValues]);
+  const currentPercents = useMemo(() => calculateResults.outputItems.map(c => c.currentPercent), [calculateResults]);
+  const currentPercentsTotal = useMemo(() => sum(...currentPercents), [currentPercents]);
+  const balanceAfters = useMemo(() => calculateResults.outputItems.map(c => c.balanceAfter), [calculateResults]);
+  const balanceAftersTotal = useMemo(() => sum(...balanceAfters), [balanceAfters]);
+  const percentAfters = useMemo(() => calculateResults.outputItems.map(c => c.percentAfter), [calculateResults]);
+  const percentAftersTotal = useMemo(() => sum(...percentAfters), [percentAfters]);
 
   interface TableStrings extends FundInputItemStrings {
     calculatedValueString: string,
+    currentPercentString: string,
     balanceAfterString: string,
     percentAfterString: string
   }
 
-  const initialTableData: TableStrings[] = [
+  const targetPercents = useMemo(() => fundInputItems.map(i => i.targetPercent), [fundInputItems]);
+  const totalTargetPercent = useMemo(() => sum(...targetPercents), [targetPercents]);
+
+  const initialTableData: TableStrings[] = useMemo(() => [
     {
       internalId: -1,
       nameString: "Total",
       currentBalanceString: sum(...fundInputItems.map(i => i.currentBalance)).toString(),
-      targetPercentString: ONE_HUNDRED.times(sum(...fundInputItems.map(i => i.targetPercent))).toString(),
+      currentPercentString: ONE_HUNDRED.times(currentPercentsTotal).round(3).toFixed(3),
+      targetPercentString: ONE_HUNDRED.times(totalTargetPercent).toString(),
       calculatedValueString: calculatedTotal.toString(),
       balanceAfterString: balanceAftersTotal.toString(),
-      percentAfterString: ONE_HUNDRED.times(percentAftersTotal).toFixed(3)
+      percentAfterString: ONE_HUNDRED.times(percentAftersTotal).round(3).toFixed(3)
     },
-  ...fundInputItems.map((fundInputItem, index) => {
-    return {
-      internalId: fundInputItem.internalId,
-      nameString: fundInputItem.name,
-      currentBalanceString: fundInputItem.currentBalance.toString(),
-      targetPercentString: ONE_HUNDRED.times(fundInputItem.targetPercent).toString(),
-      calculatedValueString: calculatedValues[index].toString(),
-      balanceAfterString: balanceAfters[index].toString(),
-      percentAfterString: ONE_HUNDRED.times(percentAfters[index]).toFixed(3)
-    }
-  })
-];
+    ...fundInputItems.map((fundInputItem, index) => {
+      return {
+        internalId: fundInputItem.internalId,
+        nameString: fundInputItem.name,
+        currentBalanceString: fundInputItem.currentBalance.toString(),
+        currentPercentString: ONE_HUNDRED.times(currentPercents[index]).round(3).toFixed(3),
+        targetPercentString: ONE_HUNDRED.times(fundInputItem.targetPercent).toString(),
+        calculatedValueString: calculatedValues[index].toString(),
+        balanceAfterString: balanceAfters[index].toString(),
+        percentAfterString: ONE_HUNDRED.times(percentAfters[index]).round(3).toFixed(3)
+      }
+    })
+  ], [fundInputItems, currentPercentsTotal, totalTargetPercent, calculatedTotal, balanceAftersTotal, percentAftersTotal, currentPercents, calculatedValues, balanceAfters, percentAfters]);
 
   const currencyFormatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -81,6 +89,8 @@ const InputView = () => {
 
   const [openModal, setOpenModal] = useState<string | boolean>(false);
   const handleClose = () => setOpenModal(false);
+
+  const bigStringComparator: GridComparatorFn<string> = (v1, v2) => Number(v1) - Number(v2);
 
   return (
     <Box
@@ -107,18 +117,8 @@ const InputView = () => {
                 field: 'nameString',
                 headerName: 'Fund Name',
                 editable: true,
-                renderCell: renderValue
-              },
-              {
-                field: 'currentBalanceString',
-                headerName: 'Current Balance',
-                editable: true,
-                valueFormatter: ({ value }) => currencyFormatter.format(value),
-                preProcessEditCellProps: (params: GridPreProcessEditCellProps) => {
-                  const hasError = !isBig(params.props.value);
-                  return { ...params.props, error: hasError };
-                },
-                renderCell: renderValue
+                renderCell: renderValue,
+                flex: 1
               },
               {
                 field: 'targetPercentString',
@@ -130,50 +130,74 @@ const InputView = () => {
                   const validPercent = isBigValue ? isValidPercentage(new Big(params.props.value)) : false
                   return { ...params.props, error: !validPercent };
                 },
-                renderCell: renderValue
+                renderCell: renderValue,
+                flex: 1,
+                sortComparator: bigStringComparator
+              },
+              {
+                field: 'currentBalanceString',
+                headerName: 'Current Balance',
+                editable: true,
+                valueFormatter: ({ value }) => currencyFormatter.format(value),
+                preProcessEditCellProps: (params: GridPreProcessEditCellProps) => {
+                  const hasError = !isBig(params.props.value);
+                  return { ...params.props, error: hasError };
+                },
+                renderCell: renderValue,
+                flex: 1,
+                sortComparator: bigStringComparator
+              },
+              {
+                field: 'currentPercentString',
+                headerName: 'Current Percent',
+                valueFormatter: ({ value }) => value + "%",
+                renderCell: renderValue,
+                flex: 1,
+                sortComparator: bigStringComparator
               },
               {
                 field: 'calculatedValueString',
                 headerName: 'Amount to Invest',
                 valueFormatter: ({ value }) => currencyFormatter.format(value),
-                renderCell: renderValue
+                renderCell: renderValue,
+                flex: 1,
+                sortComparator: bigStringComparator
               },
               {
                 field: 'balanceAfterString',
                 headerName: 'Balance After Investment',
                 valueFormatter: ({ value }) => currencyFormatter.format(value),
-                renderCell: renderValue
+                renderCell: renderValue,
+                flex: 1,
+                sortComparator: bigStringComparator
               },
               {
                 field: 'percentAfterString',
                 headerName: 'Percent After Investment',
                 valueFormatter: ({ value }) => value + "%",
-                renderCell: renderValue
+                renderCell: renderValue,
+                flex: 1,
+                sortComparator: bigStringComparator
               },
               {
                 field: 'actions',
                 headerName: 'Actions',
                 type: 'actions',
                 width: 80,
-                getActions: (params: GridRowParams<TableStrings>) => {
-                  if(params.row.internalId === -1) {
-                    return []
-                  } else {
-                    return [
-                      <GridActionsCellItem
-                        icon={<DeleteIcon />}
-                        label="Delete"
-                        onClick={() => removeFundInputItem(params.row.internalId)}
-                      />,
-                    ]
-                  }
-              },
-              },
-              
+                getActions: (params: GridRowParams<TableStrings>) => params.row.internalId === -1 ? [] : 
+                  [
+                    <GridActionsCellItem
+                      icon={<DeleteIcon />}
+                      label="Delete"
+                      onClick={() => removeFundInputItem(params.row.internalId)}
+                    />
+                  ]
+              }
             ]}
-            getRowId={(row) => row.internalId}
+            disableColumnMenu={true}
+            getRowId={row => row.internalId}
             rows={initialTableData}
-            isCellEditable={(params) => params.row.internalId !== -1}
+            isCellEditable={params => params.row.internalId !== -1}
             processRowUpdate={(newRow: TableStrings, oldRow: TableStrings) => {
               const setters = fundInputItemSetters.filter(item => item.internalId === oldRow.internalId);
               for(const setter of setters) {
