@@ -13,11 +13,6 @@ interface CalculatorInput {
   fundInputItems: CalcFundItem[]
 }
 
-interface CalcOutputItem {
-  amountToInvest: Big,
-  
-}
-
 export const fromFundInputItem = (item: FundInputItem): CalcFundItem => {
   return { currentBalance: item.currentBalance, targetPercent: item.targetPercent }
 }
