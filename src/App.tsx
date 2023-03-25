@@ -1,25 +1,40 @@
 import './App.css';
 import InputProvider from './InputProvider';
 import InputView from './InputView';
-import UrlParamInputProvider from './UrlParamInputProvider';
-import InputUrlParamProvider from './InputUrlParamProvider';
+import UrlParamInputProvider from './share/UrlParamInputProvider';
+import InputUrlParamProvider from './share/InputUrlParamProvider';
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
+import { blue } from '@mui/material/colors';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 
-function App() {
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: blue[400]
+    },
+    secondary: {
+      main: blue[100]
+    }
+  }
+});
+
+const App = () => {
 
   return (
     <div className="App">
-      <Router>
-        <UrlParamInputProvider>
-          <InputProvider>
-            <InputUrlParamProvider>
-            <Routes>
-              <Route path='/' element={<InputView/>} />
-              </Routes>
-            </InputUrlParamProvider>
-          </InputProvider>
-        </UrlParamInputProvider>
-      </Router>
+      <ThemeProvider theme={theme}>
+        <Router>
+          <UrlParamInputProvider>
+            <InputProvider>
+              <InputUrlParamProvider>
+              <Routes>
+                <Route path='/' element={<InputView/>} />
+                </Routes>
+              </InputUrlParamProvider>
+            </InputProvider>
+          </UrlParamInputProvider>
+        </Router>
+      </ThemeProvider>
     </div>
   );
 }

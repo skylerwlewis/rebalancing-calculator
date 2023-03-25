@@ -1,21 +1,12 @@
 import { Big } from 'big.js';
 import { createContext, PropsWithChildren, useContext, useMemo, useState } from 'react';
-import { ONE_HUNDRED, ONE_HUNDREDTH, ZERO } from './BigConstants';
+import { ONE_HUNDREDTH, ZERO } from './BigConstants';
 import { BigFieldSetters } from './BigFieldProps';
-import FundInputItem from './FundInputItem';
+import FundInputItem, { FundInputItemStrings, toStrings } from './FundInputItem';
+import { fromInputUrlParams } from './share/InputUrlParams';
 import { setItemProperty } from './SetUtils';
 import { StringFieldSetters } from './StringFieldProps';
-import { UrlParamInputContext } from './UrlParamInputProvider';
-
-//Interfaces for objects we need to hold in state
-export interface FundInputItemStrings {
-  internalId: number;
-  nameString: string;
-  currentBalanceString: string;
-  targetPercentString: string;
-}
-
-//Helper setter interface for passing down to TextFields
+import { UrlParamInputContext } from './share/UrlParamInputProvider';
 export interface FundInputItemSetter {
   internalId: number,
   nameSetters: StringFieldSetters;
@@ -23,7 +14,6 @@ export interface FundInputItemSetter {
   targetPercentSetters: BigFieldSetters;
 }
 
-//Consumers of this provider can use a read-only state or can use a separate list of setters to set the fields within that state
 type InputContextState = {
   fundInputItems: FundInputItem[];
   fundInputItemSetters: FundInputItemSetter[];
@@ -31,7 +21,6 @@ type InputContextState = {
   removeFundInputItem: (index: number) => void;
 }
 
-//Starting list of items in state
 const initialItems: FundInputItem[] = [
   {
     internalId: 0,
@@ -69,8 +58,7 @@ const initialBigFieldSetter = (big: Big): BigFieldSetters => {
 const initialStringFieldSetter = (string: string): StringFieldSetters => {
   return {
     stringValue: string,
-    setStringValue: () => { },
-    setRealStringValue: () => { }
+    setStringValue: () => { }
   }
 }
 const initialInputState: InputContextState = {
@@ -87,41 +75,20 @@ const initialInputState: InputContextState = {
   removeFundInputItem: (index: number) => { }
 };
 
-export const toStrings = (fundInputItem: FundInputItem): FundInputItemStrings => {
-  return {
-    internalId: fundInputItem.internalId,
-    nameString: fundInputItem.name,
-    currentBalanceString: fundInputItem.currentBalance.toString(),
-    targetPercentString: ONE_HUNDRED.times(fundInputItem.targetPercent).toString()
-  }
-}
-
-export const fromStrings = (fundInputItemStrings: FundInputItemStrings): FundInputItem => {
-  return {
-    internalId: fundInputItemStrings.internalId,
-    name: fundInputItemStrings.nameString,
-    currentBalance: new Big(fundInputItemStrings.currentBalanceString),
-    targetPercent: ONE_HUNDREDTH.times(new Big(fundInputItemStrings.targetPercentString))
-  }
-}
-
 export const InputContext = createContext<InputContextState>(initialInputState);
 
 const InputProvider = ({ children }: PropsWithChildren<{}>) => {
 
   const { urlParamsInput } = useContext(UrlParamInputContext);
 
-  const [fundInputItems, setFundInputItems] = useState<FundInputItem[]>(urlParamsInput.length > 0 ? urlParamsInput.map(fromStrings) : initialInputState.fundInputItems);
-
+  const [fundInputItems, setFundInputItems] = useState<FundInputItem[]>(urlParamsInput.length > 0 ? urlParamsInput.map((urlParamsInput, index) => fromInputUrlParams(urlParamsInput, index)) : initialInputState.fundInputItems);
   const [fundInputItemStrings, setFundInputItemStrings] = useState<FundInputItemStrings[]>(fundInputItems.map(toStrings));
-
   const fundInputItemSetters: FundInputItemSetter[] = fundInputItemStrings.map((fundInputItemString, index) => {
     return {
       internalId: fundInputItemString.internalId,
       nameSetters: {
         stringValue: fundInputItemString.nameString,
-        setStringValue: setItemProperty(index, fundInputItemStrings => fundInputItemStrings.nameString, (fundInputItemStrings, nameString) => { return { ...fundInputItemStrings, nameString } }, setFundInputItemStrings),
-        setRealStringValue: setItemProperty(index, fundInputItem => fundInputItem.name, (fundInputItem, name) => { return { ...fundInputItem, name } }, setFundInputItems)
+        setStringValue: setItemProperty(index, fundInputItems => fundInputItems.name, (fundInputItems, name) => { return { ...fundInputItems, name } }, setFundInputItems)
       },
       currentBalanceSetters: {
         stringValue: fundInputItemString.currentBalanceString,
@@ -151,7 +118,6 @@ const InputProvider = ({ children }: PropsWithChildren<{}>) => {
     setFundInputItemStrings([...fundInputItemStrings, nextItemStrings]);
     setMaxInternalId(nextItem.internalId);
   }
-
   const removeFundInputItem = (internalId: number) => {
     setFundInputItems(fundInputItems.filter(fundInputItem => fundInputItem.internalId !== internalId));
     setFundInputItemStrings(fundInputItemStrings.filter(fundInputItemString => fundInputItemString.internalId !== internalId));

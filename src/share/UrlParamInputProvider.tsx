@@ -1,12 +1,12 @@
 import { createContext, PropsWithChildren, useMemo, } from 'react';
 import { useLocation } from 'react-router-dom';
-import { FundInputItemStrings } from './InputProvider';
 import LZString from 'lz-string';
+import { InputUrlParams } from './InputUrlParams';
 
 type UrlParamInputContextState = {
   baseUrl: string;
   queryStrings: string;
-  urlParamsInput: FundInputItemStrings[];
+  urlParamsInput: InputUrlParams[];
 }
 
 const initialInputState: UrlParamInputContextState = {
@@ -15,7 +15,7 @@ const initialInputState: UrlParamInputContextState = {
   urlParamsInput: []
 };
 
-const getParsedInput = (urlParamsInputString: string | null): FundInputItemStrings[] => {
+const getParsedInput = (urlParamsInputString: string | null): InputUrlParams[] => {
   if (!urlParamsInputString) {
     return [];
   }
@@ -40,7 +40,7 @@ const UrlParamInputProvider = ({ children }: PropsWithChildren<{}>) => {
     const inputString = new URLSearchParams(locationSearch).get('input');
     return !inputString ? null : inputString.replaceAll(' ', '+');
   }, [locationSearch]);
-  const urlParamsInput: FundInputItemStrings[] = useMemo(() => getParsedInput(urlParamsInputStringValue), [urlParamsInputStringValue]);
+  const urlParamsInput: InputUrlParams[] = useMemo(() => getParsedInput(urlParamsInputStringValue), [urlParamsInputStringValue]);
 
   const queryStrings = useMemo(() => {
     const queryString = locationSearch.replace(!urlParamsInputStringValue ? '' : 'input=' + urlParamsInputStringValue, '').replace('&&', '&').replace('?', '');
