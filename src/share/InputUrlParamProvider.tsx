@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { createContext, PropsWithChildren, useMemo } from 'react';
 import { InputContext } from '../input/InputProvider';
 import LZString from 'lz-string';
-import { fromMinifiedInputUrlParams, FundInputItemParams, InputUrlParams, MinifiedInputUrlParams, toFundInputItemParams, toMinifiedInputUrlParams } from './InputUrlParams';
+import { FundInputItemParams, InputUrlParams, MinifiedInputUrlParams, toFundInputItemParams, toMinifiedInputUrlParams } from './InputUrlParams';
 import JSON5 from 'json5'
 
 type InputUrlParamContextState = {
