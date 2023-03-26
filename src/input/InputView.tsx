@@ -20,10 +20,7 @@ const boxSx = {
 
 const InputView = () => {
 
-  const { fundInputItemSetters, fundInputItems, addFundInputItem, removeFundInputItem } = useContext(InputContext);
-
-  const [amountToInvest, setAmountToInvest] = useState<Big>(new Big('5000'));
-  const [amountToInvestString, setAmountToInvestString] = useState<string>(amountToInvest.toString());
+  const { amountToInvest, amountToInvestSetters, fundInputItemSetters, fundInputItems, addFundInputItem, removeFundInputItem } = useContext(InputContext);
 
   const calcInput = useMemo(() => {
     return {
@@ -115,10 +112,7 @@ const InputView = () => {
         <MoneyField
           id='investment-amount-input'
           label='Investment Amount'
-          stringValue={amountToInvestString}
-          setStringValue={setAmountToInvestString}
-          setBigValue={setAmountToInvest} />
-
+          {...amountToInvestSetters} />
         <div style={{ height: 500, width: '100%' }}>
           <DataGrid
             columns={[

@@ -1,31 +1,31 @@
 import { createContext, PropsWithChildren, useMemo, } from 'react';
 import { useLocation } from 'react-router-dom';
 import LZString from 'lz-string';
-import { InputUrlParams } from './InputUrlParams';
+import { fromMinifiedInputUrlParams, InputUrlParams, MinifiedInputUrlParams } from './InputUrlParams';
+import JSON5 from 'json5'
 
 type UrlParamInputContextState = {
   baseUrl: string;
   queryStrings: string;
-  urlParamsInput: InputUrlParams[];
+  urlParamsInput: InputUrlParams;
 }
 
 const initialInputState: UrlParamInputContextState = {
   baseUrl: '',
   queryStrings: '',
-  urlParamsInput: []
+  urlParamsInput: {}
 };
 
-const getParsedInput = (urlParamsInputString: string | null): InputUrlParams[] => {
+const getParsedInput = (urlParamsInputString: string | null): MinifiedInputUrlParams => {
   if (!urlParamsInputString) {
-    return [];
+    return {};
   }
   try {
     const decompressedJsonString = LZString.decompressFromEncodedURIComponent(urlParamsInputString);
-    return decompressedJsonString === null ? {} : JSON.parse(decompressedJsonString);
+    return decompressedJsonString === null ? {} : JSON5.parse(decompressedJsonString);
   } catch (error) {
-    return [];
+    return {};
   }
-
 }
 
 export const UrlParamInputContext = createContext<UrlParamInputContextState>(initialInputState);
@@ -40,7 +40,7 @@ const UrlParamInputProvider = ({ children }: PropsWithChildren<{}>) => {
     const inputString = new URLSearchParams(locationSearch).get('input');
     return !inputString ? null : inputString.replaceAll(' ', '+');
   }, [locationSearch]);
-  const urlParamsInput: InputUrlParams[] = useMemo(() => getParsedInput(urlParamsInputStringValue), [urlParamsInputStringValue]);
+  const urlParamsInput: InputUrlParams = useMemo(() => fromMinifiedInputUrlParams(getParsedInput(urlParamsInputStringValue)), [urlParamsInputStringValue]);
 
   const queryStrings = useMemo(() => {
     const queryString = locationSearch.replace(!urlParamsInputStringValue ? '' : 'input=' + urlParamsInputStringValue, '').replace('&&', '&').replace('?', '');

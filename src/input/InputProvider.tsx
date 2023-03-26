@@ -3,7 +3,7 @@ import { createContext, PropsWithChildren, useContext, useMemo, useState } from 
 import { ONE_HUNDREDTH, ZERO } from '../calculator/BigConstants';
 import { BigFieldSetters } from './BigFieldProps';
 import FundInputItem, { FundInputItemStrings, toStrings } from './FundInputItem';
-import { fromInputUrlParams } from '../share/InputUrlParams';
+import { fromFundInputItemParams } from '../share/InputUrlParams';
 import { setItemProperty } from '../utils/SetUtils';
 import { StringFieldSetters } from './StringFieldProps';
 import { UrlParamInputContext } from '../share/UrlParamInputProvider';
@@ -15,12 +15,15 @@ export interface FundInputItemSetter {
 }
 
 type InputContextState = {
+  amountToInvest: Big,
+  amountToInvestSetters: BigFieldSetters,
   fundInputItems: FundInputItem[];
   fundInputItemSetters: FundInputItemSetter[];
   addFundInputItem: () => void;
   removeFundInputItem: (index: number) => void;
 }
 
+const initialAmountToInvest = new Big('5000');
 const initialItems: FundInputItem[] = [
   {
     internalId: 0,
@@ -62,6 +65,8 @@ const initialStringFieldSetter = (string: string): StringFieldSetters => {
   }
 }
 const initialInputState: InputContextState = {
+  amountToInvest: initialAmountToInvest,
+  amountToInvestSetters: initialBigFieldSetter(initialAmountToInvest),
   fundInputItems: initialItems,
   fundInputItemSetters: initialItems.map(fundInputItem => {
     return {
@@ -81,7 +86,7 @@ const InputProvider = ({ children }: PropsWithChildren<{}>) => {
 
   const { urlParamsInput } = useContext(UrlParamInputContext);
 
-  const [fundInputItems, setFundInputItems] = useState<FundInputItem[]>(urlParamsInput.length > 0 ? urlParamsInput.map((urlParamsInput, index) => fromInputUrlParams(urlParamsInput, index)) : initialInputState.fundInputItems);
+  const [fundInputItems, setFundInputItems] = useState<FundInputItem[]>(urlParamsInput.fundInputItems && urlParamsInput.fundInputItems.length > 0 ? urlParamsInput.fundInputItems.map((urlParamsInput, index) => fromFundInputItemParams(urlParamsInput, index)) : initialInputState.fundInputItems);
   const [fundInputItemStrings, setFundInputItemStrings] = useState<FundInputItemStrings[]>(fundInputItems.map(toStrings));
   const fundInputItemSetters: FundInputItemSetter[] = fundInputItemStrings.map((fundInputItemString, index) => {
     return {
@@ -102,6 +107,14 @@ const InputProvider = ({ children }: PropsWithChildren<{}>) => {
       }
     }
   });
+
+  const [amountToInvest, setAmountToInvest] = useState<Big>(urlParamsInput.amountToInvest ? new Big(urlParamsInput.amountToInvest) : initialAmountToInvest);
+  const [amountToInvestString, setAmountToInvestString] = useState<string>(amountToInvest.toString());
+  const amountToInvestSetters: BigFieldSetters = {
+    stringValue: amountToInvestString,
+    setStringValue: setAmountToInvestString,
+    setBigValue: setAmountToInvest
+  }
 
   const [maxInternalId, setMaxInternalId] = useState<number>(Math.max(...fundInputItems.map(item => item.internalId)));
   const nextItem = useMemo(() => {
@@ -126,6 +139,8 @@ const InputProvider = ({ children }: PropsWithChildren<{}>) => {
   return (
     <InputContext.Provider
       value={{
+        amountToInvest,
+        amountToInvestSetters,
         fundInputItems,
         fundInputItemSetters,
         addFundInputItem,
