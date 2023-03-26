@@ -2,15 +2,16 @@ import { useContext } from 'react';
 import { createContext, PropsWithChildren, useMemo } from 'react';
 import { InputContext } from '../input/InputProvider';
 import LZString from 'lz-string';
-import { InputUrlParams, toInputUrlParams } from './InputUrlParams';
+import { FundInputItemParams, InputUrlParams, MinifiedInputUrlParams, toFundInputItemParams, toMinifiedInputUrlParams } from './InputUrlParams';
+import JSON5 from 'json5'
 
 type InputUrlParamContextState = {
-  input: InputUrlParams[];
+  input: InputUrlParams;
   inputUrlJsonString: string;
 }
 
 const initialInputState: InputUrlParamContextState = {
-  input: [],
+  input: {},
   inputUrlJsonString: ''
 };
 
@@ -18,11 +19,23 @@ export const InputUrlParamContext = createContext<InputUrlParamContextState>(ini
 
 const InputUrlParamProvider = ({ children }: PropsWithChildren<{}>) => {
 
-  const { fundInputItems } = useContext(InputContext);
+  const { amountToInvest, fundInputItems } = useContext(InputContext);
 
-  const urlParams: InputUrlParams[] = useMemo(() => fundInputItems.map(toInputUrlParams), [fundInputItems]);
+  const fundInputItemParams: FundInputItemParams[] = useMemo(() => fundInputItems.map(toFundInputItemParams), [fundInputItems]);
 
-  const jsonString = useMemo(() => LZString.compressToEncodedURIComponent(JSON.stringify(urlParams)), [urlParams]);
+  const urlParams: InputUrlParams = useMemo(() => {
+    return {
+      amountToInvest: amountToInvest.toString(),
+      fundInputItems: fundInputItemParams
+    }
+  }, [
+    amountToInvest,
+    fundInputItemParams
+  ]);
+
+  const minifiedUrlParams: MinifiedInputUrlParams = useMemo(() => toMinifiedInputUrlParams(urlParams), [urlParams]);
+
+  const jsonString = useMemo(() => LZString.compressToEncodedURIComponent(JSON5.stringify(minifiedUrlParams)), [minifiedUrlParams]);
 
   return (
     <InputUrlParamContext.Provider
