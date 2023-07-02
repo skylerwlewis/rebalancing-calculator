@@ -23,31 +23,19 @@ type InputContextState = {
   removeFundInputItem: (index: number) => void;
 }
 
-const initialAmountToInvest = new Big('5000');
+const initialAmountToInvest = new Big('100');
 const initialItems: FundInputItem[] = [
   {
     internalId: 0,
-    name: "SWISX",
-    currentBalance: new Big('32116.97'),
-    targetPercent: ONE_HUNDREDTH.times(new Big('20'))
+    name: "VFIAX",
+    currentBalance: new Big('100'),
+    targetPercent: ONE_HUNDREDTH.times(new Big('40'))
   },
   {
     internalId: 1,
-    name: "SWMCX",
-    currentBalance: new Big('30277.81'),
-    targetPercent: ONE_HUNDREDTH.times(new Big('20'))
-  },
-  {
-    internalId: 2,
-    name: "SWPPX",
-    currentBalance: new Big('47674.68'),
-    targetPercent: ONE_HUNDREDTH.times(new Big('30'))
-  },
-  {
-    internalId: 3,
-    name: "SWSSX",
-    currentBalance: new Big('44728.47'),
-    targetPercent: ONE_HUNDREDTH.times(new Big('30'))
+    name: "VTSAX",
+    currentBalance: new Big('100'),
+    targetPercent: ONE_HUNDREDTH.times(new Big('60'))
   }
 ]
 
