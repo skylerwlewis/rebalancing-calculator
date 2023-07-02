@@ -33,9 +33,7 @@ const InputUrlParamProvider = ({ children }: PropsWithChildren<{}>) => {
     fundInputItemParams
   ]);
 
-  const minifiedUrlParams: MinifiedInputUrlParams = useMemo(() => toMinifiedInputUrlParams(urlParams), [urlParams]);
-
-  const jsonString = useMemo(() => LZString.compressToEncodedURIComponent(JSON5.stringify(minifiedUrlParams)), [minifiedUrlParams]);
+  const jsonString = useMemo(() => LZString.compressToEncodedURIComponent(JSON5.stringify(toMinifiedInputUrlParams(urlParams))), [urlParams]);
 
   return (
     <InputUrlParamContext.Provider
