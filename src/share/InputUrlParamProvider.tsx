@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { createContext, PropsWithChildren, useMemo } from 'react';
 import { InputContext } from '../input/InputProvider';
 import LZString from 'lz-string';
-import { FundInputItemParams, InputUrlParams, MinifiedInputUrlParams, toFundInputItemParams, toMinifiedInputUrlParams } from './InputUrlParams';
+import { FundInputItemParams, InputUrlParams, toFundInputItemParams, toMinifiedInputUrlParams } from './InputUrlParams';
 import JSON5 from 'json5'
 
 type InputUrlParamContextState = {
@@ -33,7 +33,9 @@ const InputUrlParamProvider = ({ children }: PropsWithChildren<{}>) => {
     fundInputItemParams
   ]);
 
-  const jsonString = useMemo(() => LZString.compressToEncodedURIComponent(JSON5.stringify(toMinifiedInputUrlParams(urlParams))), [urlParams]);
+  const minifiedUrlParams = useMemo(() => toMinifiedInputUrlParams(urlParams), [urlParams]);
+
+  const jsonString = useMemo(() => LZString.compressToEncodedURIComponent(JSON5.stringify(minifiedUrlParams)), [minifiedUrlParams]);
 
   return (
     <InputUrlParamContext.Provider
