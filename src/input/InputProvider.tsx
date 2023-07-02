@@ -27,13 +27,13 @@ const initialAmountToInvest = new Big('100');
 const initialItems: FundInputItem[] = [
   {
     internalId: 0,
-    name: "VFIAX",
+    name: 'VFIAX',
     currentBalance: new Big('100'),
     targetPercent: ONE_HUNDREDTH.times(new Big('40'))
   },
   {
     internalId: 1,
-    name: "VTSAX",
+    name: 'VTSAX',
     currentBalance: new Big('100'),
     targetPercent: ONE_HUNDREDTH.times(new Big('60'))
   }
@@ -108,7 +108,7 @@ const InputProvider = ({ children }: PropsWithChildren<{}>) => {
   const nextItem = useMemo(() => {
     return {
       internalId: maxInternalId + 1,
-      name: "New Fund",
+      name: 'New Fund',
       currentBalance: ZERO,
       targetPercent: ZERO
     }

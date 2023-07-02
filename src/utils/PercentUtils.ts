@@ -1,7 +1,7 @@
-import Big from "big.js";
-import { Dispatch, SetStateAction } from "react";
-import { ONE_HUNDRED, ONE_HUNDREDTH, ZERO } from "../calculator/BigConstants";
-import { setTransform } from "./SetUtils";
+import Big from 'big.js';
+import { Dispatch, SetStateAction } from 'react';
+import { ONE_HUNDRED, ONE_HUNDREDTH, ZERO } from '../calculator/BigConstants';
+import { setTransform } from './SetUtils';
 
 const MAX_PERCENTAGE = 100;
 

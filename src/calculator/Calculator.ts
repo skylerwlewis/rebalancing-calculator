@@ -1,7 +1,7 @@
-import Big from "big.js";
-import { ONE, ZERO } from "./BigConstants";
-import { max, min, sum } from "../utils/BigUtils";
-import FundInputItem from "../input/FundInputItem";
+import Big from 'big.js';
+import { ONE, ZERO } from './BigConstants';
+import { max, min, sum } from '../utils/BigUtils';
+import FundInputItem from '../input/FundInputItem';
 
 
 interface CalcFundItem {
@@ -28,9 +28,9 @@ export const fromFundInputItem = (item: FundInputItem): CalcFundItem => {
   return { currentBalance: item.currentBalance, targetPercent: item.targetPercent }
 }
 
-const calculate = ({amountToInvest, fundInputItems}: CalculatorInput): CalculatorOutput => {
+const calculate = ({ amountToInvest, fundInputItems }: CalculatorInput): CalculatorOutput => {
 
-  if(fundInputItems.length === 0) { return { outputItems: [] } }
+  if (fundInputItems.length === 0) { return { outputItems: [] } }
 
   const targetPercents = fundInputItems.map(fundInputItem => fundInputItem.targetPercent);
   const totalTargetPercents = sum(...targetPercents);
@@ -65,14 +65,16 @@ const calculate = ({amountToInvest, fundInputItems}: CalculatorInput): Calculato
   const balanceAftersTotal = sum(...balanceAfters);
   const percentAfters = ZERO.eq(balanceAftersTotal) ? new Array(balanceAfters.length).fill(ZERO) : balanceAfters.map(balanceAfter => balanceAfter.div(balanceAftersTotal));
 
-  return { outputItems: fixedTotals.map((fixedTotal, index) => {
-    return {
-      calculatedValue: fixedTotal,
-      currentPercent: currentPercents[index],
-      balanceAfter: balanceAfters[index],
-      percentAfter: percentAfters[index]
-    }
-  }) };
+  return {
+    outputItems: fixedTotals.map((fixedTotal, index) => {
+      return {
+        calculatedValue: fixedTotal,
+        currentPercent: currentPercents[index],
+        balanceAfter: balanceAfters[index],
+        percentAfter: percentAfters[index]
+      }
+    })
+  };
 };
 
 export default calculate;
