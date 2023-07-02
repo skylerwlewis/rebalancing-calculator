@@ -11,7 +11,7 @@ export const compareBig = (big1: Big, big2: Big) => big1.lt(big2) ? -1 : big1.gt
 
 export const isBig = (value: string) => {
   try {
-    new Big(value);
+    new Big(value.replaceAll(',',''));
     return true;
   } catch (error) {
     return false;
@@ -20,7 +20,8 @@ export const isBig = (value: string) => {
 
 export const setBigFromString = (stringValue: string, setStringValue: Dispatch<SetStateAction<string>>, setBigValue: Dispatch<SetStateAction<Big>>) => {
   setStringValue(stringValue);
-  if (isBig(stringValue)) {
-    setBigValue(new Big(stringValue));
+  const stringValueScrubbed = stringValue.replaceAll(',','');
+  if (isBig(stringValueScrubbed)) {
+    setBigValue(new Big(stringValueScrubbed));
   }
 };
