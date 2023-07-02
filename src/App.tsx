@@ -21,14 +21,14 @@ const theme = createTheme({
 const App = () => {
 
   return (
-    <div className="App">
+    <div className='App'>
       <ThemeProvider theme={theme}>
         <Router>
           <UrlParamInputProvider>
             <InputProvider>
               <InputUrlParamProvider>
-              <Routes>
-                <Route path='/' element={<InputView/>} />
+                <Routes>
+                  <Route path='/' element={<InputView />} />
                 </Routes>
               </InputUrlParamProvider>
             </InputProvider>

@@ -51,7 +51,7 @@ const InputView = () => {
   const initialTableData: TableStrings[] = useMemo(() => [
     {
       internalId: -1,
-      nameString: "Total",
+      nameString: 'Total',
       currentBalanceString: sum(...fundInputItems.map(i => i.currentBalance)).toString(),
       currentPercentString: ONE_HUNDRED.times(currentPercentsTotal).round(3).toFixed(3),
       targetPercentString: ONE_HUNDRED.times(totalTargetPercent).toString(),
@@ -72,15 +72,15 @@ const InputView = () => {
       }
     })
   ], [
-    fundInputItems, 
-    currentPercentsTotal, 
-    totalTargetPercent, 
-    calculatedTotal, 
-    balanceAftersTotal, 
-    percentAftersTotal, 
+    fundInputItems,
+    currentPercentsTotal,
+    totalTargetPercent,
+    calculatedTotal,
+    balanceAftersTotal,
+    percentAftersTotal,
     currentPercents,
-    calculatedValues, 
-    balanceAfters, 
+    calculatedValues,
+    balanceAfters,
     percentAfters
   ]);
 
@@ -127,7 +127,7 @@ const InputView = () => {
                 field: 'targetPercentString',
                 headerName: 'Target Percent',
                 editable: true,
-                valueFormatter: ({ value }) => value + "%",
+                valueFormatter: ({ value }) => value + '%',
                 preProcessEditCellProps: (params: GridPreProcessEditCellProps) => {
                   const isBigValue = isBig(params.props.value);
                   const validPercent = isBigValue ? isValidPercentage(new Big(params.props.value)) : false
@@ -153,7 +153,7 @@ const InputView = () => {
               {
                 field: 'currentPercentString',
                 headerName: 'Current Percent',
-                valueFormatter: ({ value }) => value + "%",
+                valueFormatter: ({ value }) => value + '%',
                 renderCell: renderValue,
                 flex: 1,
                 sortComparator: numericComparator
@@ -177,7 +177,7 @@ const InputView = () => {
               {
                 field: 'percentAfterString',
                 headerName: 'Percent After Investment',
-                valueFormatter: ({ value }) => value + "%",
+                valueFormatter: ({ value }) => value + '%',
                 renderCell: renderValue,
                 flex: 1,
                 sortComparator: numericComparator
@@ -187,11 +187,11 @@ const InputView = () => {
                 headerName: 'Actions',
                 type: 'actions',
                 width: 80,
-                getActions: (params: GridRowParams<TableStrings>) => params.row.internalId === -1 ? [] : 
+                getActions: (params: GridRowParams<TableStrings>) => params.row.internalId === -1 ? [] :
                   [
                     <GridActionsCellItem
                       icon={<DeleteIcon />}
-                      label="Delete"
+                      label='Delete'
                       onClick={() => removeFundInputItem(params.row.internalId)}
                     />
                   ]
@@ -203,7 +203,7 @@ const InputView = () => {
             isCellEditable={params => params.row.internalId !== -1}
             processRowUpdate={(newRow: TableStrings, oldRow: TableStrings) => {
               const setters = fundInputItemSetters.filter(item => item.internalId === oldRow.internalId);
-              for(const setter of setters) {
+              for (const setter of setters) {
                 setter.nameSetters.setStringValue(newRow.nameString);
                 setBigFromString(newRow.currentBalanceString, setter.currentBalanceSetters.setStringValue, setter.currentBalanceSetters.setBigValue);
                 setBigFromString(newRow.targetPercentString, setter.targetPercentSetters.setStringValue, setIf(isValidPercentage, setPercentage(setter.targetPercentSetters.setBigValue)));
@@ -213,7 +213,7 @@ const InputView = () => {
           />
           <Button onClick={() => { addFundInputItem() }}>Add new item</Button>
           <Button onClick={() => setOpenModal('share')}><ShareIcon /></Button>
-        <ShareModal open={openModal === 'share'} handleClose={handleClose} />
+          <ShareModal open={openModal === 'share'} handleClose={handleClose} />
         </div>
       </>
     </Box>
