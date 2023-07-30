@@ -1,4 +1,4 @@
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, Container, Typography } from '@mui/material';
 import { useContext, useMemo, useState } from 'react';
 import MoneyField from './MoneyField';
 import { isValidPercentage, setPercentage } from '../utils/PercentUtils';
@@ -99,12 +99,13 @@ const InputView = () => {
   const numericComparator: GridComparatorFn<string> = (v1, v2) => Number(v1) - Number(v2);
 
   return (
-    <Box
-      component='form'
-      sx={boxSx}
-      noValidate
-      autoComplete='off'
-    >
+    <Container sx={{
+      ...boxSx,
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center'
+    }}>
       <>
         <Typography>
           Fill in your fund information to rebalance your portfolio
@@ -113,8 +114,22 @@ const InputView = () => {
           id='investment-amount-input'
           label='Investment Amount'
           {...amountToInvestSetters} />
-        <div style={{ height: 500, width: '100%' }}>
+        <Container sx={{ flexGrow: '1' }}>
           <DataGrid
+            disableColumnMenu={true}
+            autoPageSize={true}
+            getRowId={row => row.internalId}
+            isCellEditable={params => params.row.internalId !== -1}
+            rows={initialTableData}
+            processRowUpdate={(newRow: TableStrings, oldRow: TableStrings) => {
+              const setters = fundInputItemSetters.filter(item => item.internalId === oldRow.internalId);
+              for (const setter of setters) {
+                setter.nameSetters.setStringValue(newRow.nameString);
+                setBigFromString(newRow.currentBalanceString, setter.currentBalanceSetters.setStringValue, setter.currentBalanceSetters.setBigValue);
+                setBigFromString(newRow.targetPercentString, setter.targetPercentSetters.setStringValue, setIf(isValidPercentage, setPercentage(setter.targetPercentSetters.setBigValue)));
+              }
+              return newRow;
+            }}
             columns={[
               {
                 field: 'nameString',
@@ -197,26 +212,16 @@ const InputView = () => {
                   ]
               }
             ]}
-            disableColumnMenu={true}
-            getRowId={row => row.internalId}
-            rows={initialTableData}
-            isCellEditable={params => params.row.internalId !== -1}
-            processRowUpdate={(newRow: TableStrings, oldRow: TableStrings) => {
-              const setters = fundInputItemSetters.filter(item => item.internalId === oldRow.internalId);
-              for (const setter of setters) {
-                setter.nameSetters.setStringValue(newRow.nameString);
-                setBigFromString(newRow.currentBalanceString, setter.currentBalanceSetters.setStringValue, setter.currentBalanceSetters.setBigValue);
-                setBigFromString(newRow.targetPercentString, setter.targetPercentSetters.setStringValue, setIf(isValidPercentage, setPercentage(setter.targetPercentSetters.setBigValue)));
-              }
-              return newRow;
-            }}
           />
+        </Container>
+        <Container>
           <Button onClick={() => { addFundInputItem() }}>Add new item</Button>
           <Button onClick={() => setOpenModal('share')}><ShareIcon /></Button>
-          <ShareModal open={openModal === 'share'} handleClose={handleClose} />
-        </div>
+        </Container>
+        <ShareModal open={openModal === 'share'} handleClose={handleClose} />
+
       </>
-    </Box>
+    </Container>
   );
 };
 
