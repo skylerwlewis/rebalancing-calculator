@@ -47,7 +47,7 @@ const UrlParamInputProvider = ({ children }: PropsWithChildren<{}>) => {
     return !!queryString && !queryString.endsWith('&') ? queryString + '&' : queryString;
   }, [locationSearch, urlParamsInputStringValue]);
 
-  const baseUrl = useMemo(() => windowLocationHref.replace(locationSearch, '').replace(locationPathName, ''), [windowLocationHref, locationSearch, locationPathName]);
+  const baseUrl = useMemo(() => windowLocationHref.replace(new RegExp(locationSearch + '$'), '').replace(new RegExp(locationPathName + '$'), ''), [windowLocationHref, locationSearch, locationPathName]);
 
   return (
     <UrlParamInputContext.Provider
