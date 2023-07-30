@@ -1,4 +1,4 @@
-import { Button, Container, Typography } from '@mui/material';
+import { Box, Button, ButtonGroup, Container, Divider, IconButton, Link, Typography } from '@mui/material';
 import { useContext, useMemo, useState } from 'react';
 import MoneyField from './MoneyField';
 import { isValidPercentage, setPercentage } from '../utils/PercentUtils';
@@ -10,13 +10,15 @@ import { DataGrid, GridPreProcessEditCellProps, GridActionsCellItem, GridRowPara
 import { setIf } from '../utils/SetUtils';
 import { ONE_HUNDRED } from '../calculator/BigConstants';
 import DeleteIcon from '@mui/icons-material/Delete';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import AddCircleIcon from '@mui/icons-material/AddCircle';
 import ShareModal from '../share/modal/ShareModal';
 import ShareIcon from '@mui/icons-material/Share';
 import { FundInputItemStrings } from './FundInputItem';
+import { useNavigate } from 'react-router-dom';
+import { grey } from '@mui/material/colors';
 
-const boxSx = {
-  '& .MuiTextField-root': { m: 1, width: '25ch' },
-};
+const githubLink = 'https://github.com/skylerwlewis/rebalancing-calculator'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -37,6 +39,8 @@ const renderValue = (params: GridRenderCellParams<FundOutputItemStrings, any, an
 const numericComparator: GridComparatorFn<string> = (v1, v2) => Number(v1) - Number(v2);
 
 const InputView = () => {
+
+  const navigate = useNavigate();
 
   const { amountToInvest, amountToInvestSetters, fundInputItemSetters, fundInputItems, addFundInputItem, removeFundInputItem } = useContext(InputContext);
 
@@ -111,12 +115,12 @@ const InputView = () => {
   const handleClose = () => setOpenModal(false);
 
   return (
-    <Container sx={{
-      ...boxSx,
+    <Box sx={{
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center'
+      alignItems: 'center',
+      width: '100%'
     }}>
       <Container>
         <Typography>
@@ -125,9 +129,42 @@ const InputView = () => {
         <MoneyField
           id='investment-amount-input'
           label='Investment Amount'
+          sx={{
+            m: 1,
+            width: '25ch'
+          }}
           {...amountToInvestSetters} />
       </Container>
-      <Container sx={{ flexGrow: '1' }}>
+      <Container sx={{
+        display: 'flex',
+        alignItems: 'center',
+        width: 'fit-content',
+        marginBottom: 1
+      }}>
+        <ButtonGroup variant="contained" sx={{
+          // The Github Button with href below does not get handled correctly by ButtonGroup, the style below fixes that
+
+          // Applying '.MuiButtonGroup-grouped:not(:first-of-type)' styles
+          '.MuiButtonGroup-grouped:not(:first-child)': {
+            borderTopLeftRadius: 0,
+            borderBottomLeftRadius: 0
+          },
+          // Applying '.MuiButtonGroup-grouped:not(:last-of-type)' styles
+          '.MuiButtonGroup-grouped:not(:last-child)': {
+            borderTopRightRadius: 0,
+            borderBottomRightRadius: 0,
+            borderRight: '1px solid',
+            borderRightColor: grey[400],
+            borderColor: 'rgb(46, 115, 171)'
+          },
+          }}>
+          <Button startIcon={<AddCircleIcon />} onClick={() => { addFundInputItem() }}>Add fund</Button>
+          <Button startIcon={<ShareIcon />} onClick={() => setOpenModal('share')}>Share</Button>
+          <Button startIcon={<GitHubIcon />} href={githubLink}>View on Github</Button>
+        </ButtonGroup>
+        <ShareModal open={openModal === 'share'} handleClose={handleClose} />
+      </Container>
+      <Box sx={{ flexGrow: '1', width: '100%' }}>
         <DataGrid
           disableColumnMenu={true}
           autoPageSize={true}
@@ -163,7 +200,8 @@ const InputView = () => {
               },
               renderCell: renderValue,
               flex: 1,
-              sortComparator: numericComparator
+              sortComparator: numericComparator,
+              align: 'right'
             },
             {
               field: 'currentBalanceString',
@@ -176,7 +214,8 @@ const InputView = () => {
               },
               renderCell: renderValue,
               flex: 1,
-              sortComparator: numericComparator
+              sortComparator: numericComparator,
+              align: 'right'
             },
             {
               field: 'currentPercentString',
@@ -184,7 +223,8 @@ const InputView = () => {
               valueFormatter: ({ value }) => value + '%',
               renderCell: renderValue,
               flex: 1,
-              sortComparator: numericComparator
+              sortComparator: numericComparator,
+              align: 'right'
             },
             {
               field: 'amountToInvestString',
@@ -192,7 +232,8 @@ const InputView = () => {
               valueFormatter: ({ value }) => currencyFormatter.format(value),
               renderCell: renderValue,
               flex: 1,
-              sortComparator: numericComparator
+              sortComparator: numericComparator,
+              align: 'right'
             },
             {
               field: 'balanceAfterString',
@@ -200,7 +241,8 @@ const InputView = () => {
               valueFormatter: ({ value }) => currencyFormatter.format(value),
               renderCell: renderValue,
               flex: 1,
-              sortComparator: numericComparator
+              sortComparator: numericComparator,
+              align: 'right'
             },
             {
               field: 'percentAfterString',
@@ -208,7 +250,8 @@ const InputView = () => {
               valueFormatter: ({ value }) => value + '%',
               renderCell: renderValue,
               flex: 1,
-              sortComparator: numericComparator
+              sortComparator: numericComparator,
+              align: 'right'
             },
             {
               field: 'actions',
@@ -226,13 +269,8 @@ const InputView = () => {
             }
           ]}
         />
-      </Container>
-      <Container>
-        <Button onClick={() => { addFundInputItem() }}>Add new item</Button>
-        <Button onClick={() => setOpenModal('share')}><ShareIcon /></Button>
-        <ShareModal open={openModal === 'share'} handleClose={handleClose} />
-      </Container>
-    </Container>
+      </Box>
+    </Box>
   );
 };
 
