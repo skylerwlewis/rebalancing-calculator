@@ -198,7 +198,8 @@ const InputView = () => {
               renderCell: renderValue,
               flex: 1,
               sortComparator: numericComparator,
-              align: 'right'
+              align: 'right',
+              headerAlign: 'right'
             },
             {
               field: 'currentBalanceString',
@@ -212,7 +213,8 @@ const InputView = () => {
               renderCell: renderValue,
               flex: 1,
               sortComparator: numericComparator,
-              align: 'right'
+              align: 'right',
+              headerAlign: 'right'
             },
             {
               field: 'currentPercentString',
@@ -221,7 +223,8 @@ const InputView = () => {
               renderCell: renderValue,
               flex: 1,
               sortComparator: numericComparator,
-              align: 'right'
+              align: 'right',
+              headerAlign: 'right'
             },
             {
               field: 'amountToInvestString',
@@ -230,7 +233,8 @@ const InputView = () => {
               renderCell: renderValue,
               flex: 1,
               sortComparator: numericComparator,
-              align: 'right'
+              align: 'right',
+              headerAlign: 'right'
             },
             {
               field: 'balanceAfterString',
@@ -239,7 +243,8 @@ const InputView = () => {
               renderCell: renderValue,
               flex: 1,
               sortComparator: numericComparator,
-              align: 'right'
+              align: 'right',
+              headerAlign: 'right'
             },
             {
               field: 'percentAfterString',
@@ -248,7 +253,8 @@ const InputView = () => {
               renderCell: renderValue,
               flex: 1,
               sortComparator: numericComparator,
-              align: 'right'
+              align: 'right',
+              headerAlign: 'right'
             },
             {
               field: 'actions',
