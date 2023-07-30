@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import LZString from 'lz-string';
 import { fromMinifiedInputUrlParams, InputUrlParams, MinifiedInputUrlParams } from './InputUrlParams';
 import JSON5 from 'json5'
+import escapeStringRegexp from 'escape-string-regexp';
 
 type UrlParamInputContextState = {
   baseUrl: string;
@@ -47,7 +48,7 @@ const UrlParamInputProvider = ({ children }: PropsWithChildren<{}>) => {
     return !!queryString && !queryString.endsWith('&') ? queryString + '&' : queryString;
   }, [locationSearch, urlParamsInputStringValue]);
 
-  const baseUrl = useMemo(() => windowLocationHref.replace(new RegExp(locationSearch + '$'), '').replace(new RegExp(locationPathName + '$'), ''), [windowLocationHref, locationSearch, locationPathName]);
+  const baseUrl = useMemo(() => windowLocationHref.replace(new RegExp(escapeStringRegexp(locationSearch) + '$'), '').replace(new RegExp(escapeStringRegexp(locationPathName) + '$'), ''), [windowLocationHref, locationSearch, locationPathName]);
 
   return (
     <UrlParamInputContext.Provider
