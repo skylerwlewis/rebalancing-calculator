@@ -1,4 +1,4 @@
-import { Box, Button, ButtonGroup, Container, Divider, IconButton, Link, Typography } from '@mui/material';
+import { Box, Button, ButtonGroup, Container, Typography } from '@mui/material';
 import { useContext, useMemo, useState } from 'react';
 import MoneyField from './MoneyField';
 import { isValidPercentage, setPercentage } from '../utils/PercentUtils';
@@ -15,7 +15,6 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 import ShareModal from '../share/modal/ShareModal';
 import ShareIcon from '@mui/icons-material/Share';
 import { FundInputItemStrings } from './FundInputItem';
-import { useNavigate } from 'react-router-dom';
 import { grey } from '@mui/material/colors';
 
 const githubLink = 'https://github.com/skylerwlewis/rebalancing-calculator'
@@ -39,8 +38,6 @@ const renderValue = (params: GridRenderCellParams<FundOutputItemStrings, any, an
 const numericComparator: GridComparatorFn<string> = (v1, v2) => Number(v1) - Number(v2);
 
 const InputView = () => {
-
-  const navigate = useNavigate();
 
   const { amountToInvest, amountToInvestSetters, fundInputItemSetters, fundInputItems, addFundInputItem, removeFundInputItem } = useContext(InputContext);
 
