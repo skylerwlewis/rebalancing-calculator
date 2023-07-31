@@ -50,8 +50,11 @@ const calculate = ({ amountToInvest, fundInputItems }: CalculatorInput): Calcula
   const maxCurrentTargetRatio = max(...fixedTargetBalances.map((fixedTargetBalance, index) => ZERO.eq(fixedTargetBalance) ? ZERO : max(fixedTargetBalance, currentBalances[index]).div(fixedTargetBalance)));
   const adjustedTargetBalances = fixedTargetBalances.map(fixedTargetBalance => fixedTargetBalance.times(maxCurrentTargetRatio));
 
+  // Fix for zero target balances
+  const finalTargetBalances = adjustedTargetBalances.map((adjustedTargetBalance, index) => max(adjustedTargetBalance, currentBalances[index]));
+
   // Now that we have our final targeted balances for each fund, determine how much lower the current balance is
-  const balanceDifferences = fundInputItems.map((fundInputItem, index) => adjustedTargetBalances[index].minus(fundInputItem.currentBalance));
+  const balanceDifferences = fundInputItems.map((fundInputItem, index) => finalTargetBalances[index].minus(fundInputItem.currentBalance));
   const balanceDifferenceTotal = sum(...balanceDifferences);
 
   // Spread our amountToInvest over the balance differences, closing the gap as much as possible, weighting by balance difference
