@@ -27,6 +27,7 @@
   "scripts": {
     "start": "vite --open",
     "build": "vite build",
+    "test": "vitest",
     "serve": "vite preview"
   },
   "eslintConfig": {
@@ -49,6 +50,8 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
-    "vite": "^5.4.8"
+    "jsdom": "^25.0.1",
+    "vite": "^5.4.8",
+    "vitest": "^2.1.1"
   }
 }
