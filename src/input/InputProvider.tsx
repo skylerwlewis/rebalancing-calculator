@@ -65,7 +65,7 @@ const initialInputState: InputContextState = {
     }
   }),
   addFundInputItem: () => { },
-  removeFundInputItem: (index: number) => { }
+  removeFundInputItem: () => { }
 };
 
 export const InputContext = createContext<InputContextState>(initialInputState);
