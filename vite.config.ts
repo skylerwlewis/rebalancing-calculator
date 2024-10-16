@@ -7,6 +7,9 @@ export default defineConfig({
   server: {
     open: true,
   },
+  build: {
+    outDir: 'build',
+  },
   plugins: [react()],
   test: {
     environment: 'jsdom',
