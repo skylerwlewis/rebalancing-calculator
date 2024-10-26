@@ -6,6 +6,6 @@ This is a browser-based calculator that can help someone rebalance their portfol
 
 ## Tools Used
 
-- [Create React App](https://create-react-app.dev)
+- [React + TypeScript + Vite](https://v2.vitejs.dev/guide/)
 - [Material UI](https://mui.com)
 - [big.js](https://mikemcl.github.io/big.js)
