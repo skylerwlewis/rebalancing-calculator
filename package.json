@@ -49,5 +49,11 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "jest": {
+    "transformIgnorePatterns": [
+      "node_modules/(?!escape-string-regexp)"
+    ]
+  },
+  "packageManager": "yarn@1.22.10"
 }
