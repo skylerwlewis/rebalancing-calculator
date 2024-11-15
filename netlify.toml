@@ -1,9 +1,0 @@
-[headers]]
-  for = "/*"
-  [headers.values]
-    Permissions-Policy = "interest-cohort=()"
-
-[[redirects]]
-  from = "/*"
-  to = "/"
-  status = 200
