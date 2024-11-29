@@ -1,21 +1,21 @@
-import { Box, Button, ButtonGroup, Container, Typography } from '@mui/material';
-import { useContext, useMemo, useState } from 'react';
-import MoneyField from './MoneyField';
-import { isValidPercentage, setPercentage } from '../utils/PercentUtils';
-import { InputContext } from './InputProvider'
-import calculate, { CalculatorOutput, fromFundInputItem } from '../calculator/Calculator';
-import Big from 'big.js';
-import { isBig, setBigFromString, sum } from '../utils/BigUtils';
-import { DataGrid, GridPreProcessEditCellProps, GridActionsCellItem, GridRowParams, GridRenderCellParams, GridTreeNodeWithRender, GridComparatorFn } from '@mui/x-data-grid';
-import { setIf } from '../utils/SetUtils';
-import { ONE_HUNDRED } from '../calculator/BigConstants';
+import AddCircleIcon from '@mui/icons-material/AddCircle';
 import DeleteIcon from '@mui/icons-material/Delete';
 import GitHubIcon from '@mui/icons-material/GitHub';
-import AddCircleIcon from '@mui/icons-material/AddCircle';
-import ShareModal from '../share/modal/ShareModal';
 import ShareIcon from '@mui/icons-material/Share';
-import { FundInputItemStrings } from './FundInputItem';
+import { Box, Button, ButtonGroup, Container, Link, Stack, Typography } from '@mui/material';
 import { grey } from '@mui/material/colors';
+import { DataGrid, GridActionsCellItem, GridComparatorFn, GridPreProcessEditCellProps, GridRenderCellParams, GridRowParams, GridTreeNodeWithRender } from '@mui/x-data-grid';
+import Big from 'big.js';
+import { useContext, useMemo, useState } from 'react';
+import { ONE_HUNDRED } from '../calculator/BigConstants';
+import calculate, { CalculatorOutput, fromFundInputItem } from '../calculator/Calculator';
+import ShareModal from '../share/modal/ShareModal';
+import { isBig, setBigFromString, sum } from '../utils/BigUtils';
+import { isValidPercentage, setPercentage } from '../utils/PercentUtils';
+import { setIf } from '../utils/SetUtils';
+import { FundInputItemStrings } from './FundInputItem';
+import { InputContext } from './InputProvider';
+import MoneyField from './MoneyField';
 
 const githubLink = 'https://github.com/skylerwlewis/rebalancing-calculator'
 
@@ -112,11 +112,8 @@ const InputView = () => {
   const handleClose = () => setOpenModal(false);
 
   return (
-    <Box sx={{
+    <Stack alignItems='flex-start' sx={{
       height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
       width: '100%'
     }}>
       <Container>
@@ -154,7 +151,7 @@ const InputView = () => {
             borderRightColor: grey[400],
             borderColor: 'rgb(46, 115, 171)'
           },
-          }}>
+        }}>
           <Button startIcon={<AddCircleIcon />} onClick={() => { addFundInputItem() }}>Add fund</Button>
           <Button startIcon={<ShareIcon />} onClick={() => setOpenModal('share')}>Share</Button>
           <Button startIcon={<GitHubIcon />} href={githubLink}>View on Github</Button>
@@ -273,7 +270,20 @@ const InputView = () => {
           ]}
         />
       </Box>
-    </Box>
+      <Typography
+        fontSize='0.8125rem'
+        lineHeight={1.5}
+        zIndex={999}
+        marginLeft='0.25rem'
+        marginTop='calc(-0.8125rem * 1.5)'
+      >A <Link
+        href="https://www.skylerlewis.io"
+        target='_blank'
+      >
+        skylerlewis.io
+      </Link> project
+      </Typography>
+    </Stack>
   );
 };
 
