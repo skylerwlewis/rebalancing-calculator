@@ -15,7 +15,7 @@
     "@emotion/styled": "^11.13.0",
     "@mui/icons-material": "^5.16.7",
     "@mui/material": "^5.16.7",
-    "@mui/x-data-grid": "6.0.3",
+    "@mui/x-data-grid": "6.18.2",
     "@types/big.js": "^6.2.2",
     "big.js": "^6.2.2",
     "escape-string-regexp": "^5.0.0",
