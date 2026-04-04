@@ -20,7 +20,9 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: 'http://localhost:5174',
+    /* When BASE_URL is set (e.g. a Cloudflare Pages preview deployment),
+     * point Playwright at that URL instead of the local dev server. */
+    baseURL: process.env.BASE_URL ?? 'http://localhost:5174',
     trace: 'on-first-retry',
   },
   projects: [
@@ -29,7 +31,8 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  webServer: {
+  /* Skip starting the dev server when running against a remote URL */
+  webServer: process.env.BASE_URL ? undefined : {
     /* Use a dedicated port so this doesn't clash with the normal dev server */
     command: 'npx vite --port 5174',
     url: 'http://localhost:5174',

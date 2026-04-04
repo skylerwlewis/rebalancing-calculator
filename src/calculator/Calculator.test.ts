@@ -127,4 +127,52 @@ describe('calculate()', () => {
       expect(toFixed(item.amountToInvest)).toBe('0.00');
     }
   });
+
+  test('all target percents are 0%: investment assigned to first fund (no-op targets branch)', () => {
+    // ZERO.eq(totalTargetPercents) → fixedTargetPercents all zero → all gaps are
+    // zero → differenceScaled all zero → plusExtra all zero → penny-fix assigns
+    // full amountToInvest to fund at maxTotalIndex (first fund by position).
+    const result = calculate({
+      amountToInvest: new Big('100'),
+      fundInputItems: [fund('100', '0'), fund('100', '0')],
+    });
+
+    const total = result.outputItems.reduce(
+      (acc, item) => acc.plus(item.amountToInvest),
+      new Big('0')
+    );
+    // Investment is not lost — it ends up somewhere
+    expect(toFixed(total)).toBe('100.00');
+  });
+
+  test('one fund has 0% target: that fund is skipped in ratio calc, gets $0', () => {
+    // The ZERO.eq(fixedTargetBalance) guard in the maxCurrentTargetRatio
+    // calculation prevents division-by-zero and correctly excludes the 0%-target
+    // fund from influencing the ratio.  All investment goes to the other fund.
+    const result = calculate({
+      amountToInvest: new Big('100'),
+      fundInputItems: [fund('100', '0'), fund('100', '100')],
+    });
+
+    const [zeroTarget, fullTarget] = result.outputItems;
+    expect(toFixed(zeroTarget.amountToInvest)).toBe('0.00');
+    expect(toFixed(fullTarget.amountToInvest)).toBe('100.00');
+  });
+
+  test('zero balances AND zero investment: no division-by-zero, all outputs are zero', () => {
+    // Exercises both the ZERO.eq(balanceDifferenceTotal) guard (→ differenceScaled
+    // filled with ZERO) and the ZERO.eq(balanceAftersTotal) guard (→ percentAfters
+    // filled with ZERO), both of which are only reachable when this combination
+    // of inputs is present.
+    const result = calculate({
+      amountToInvest: new Big('0'),
+      fundInputItems: [fund('0', '40'), fund('0', '60')],
+    });
+
+    for (const item of result.outputItems) {
+      expect(toFixed(item.amountToInvest)).toBe('0.00');
+      expect(toFixed(item.balanceAfter)).toBe('0.00');
+      expect(item.percentAfter.toFixed(4)).toBe('0.0000');
+    }
+  });
 });
