@@ -1,0 +1,88 @@
+name: E2E Tests (Cloudflare Preview)
+
+# pull_request workflows run from the PR branch, so this works without
+# needing the file to exist on main first.
+#
+# GitHub Actions does NOT fire issue_comment events for GitHub App bot
+# comments (like cloudflare-workers-and-pages[bot]), so we cannot use
+# that trigger. Instead we poll the GitHub Comments REST API until the
+# Cloudflare bot comment containing "Deploy successful" appears, then
+# extract the Preview URL and run Playwright against it.
+on:
+  pull_request:
+
+jobs:
+  e2e-preview:
+    name: E2E Tests (Preview)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Cloudflare Pages preview URL
+        id: cf
+        uses: actions/github-script@v7
+        timeout-minutes: 10
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+            const sha = context.payload.pull_request.head.sha;
+            const shortSha = sha.substring(0, 7);
+
+            core.info(`Polling for Cloudflare comment on PR #${prNumber} (${shortSha})...`);
+
+            for (let attempt = 1; attempt <= 60; attempt++) {
+              const { data: comments } = await github.rest.issues.listComments({
+                owner, repo, issue_number: prNumber, per_page: 50,
+              });
+
+              const cfComment = comments.find(c =>
+                c.user.login === 'cloudflare-workers-and-pages[bot]' &&
+                c.body.includes('Deploy successful') &&
+                c.body.includes(shortSha)
+              );
+
+              if (cfComment) {
+                // The comment is HTML. The Preview URL cell spans two lines:
+                //   <tr><td><strong>Preview URL:</strong></td><td>
+                //   <a href='https://...'>https://...</a>
+                // Find the index of the Preview URL row, then grab the URL from the next line.
+                const lines = cfComment.body.split('\n');
+                const idx = lines.findIndex(l => l.includes('Preview URL:') && !l.includes('Branch'));
+                const urlMatch = lines[idx + 1]?.match(/https:\/\/[^\s'"<]+/);
+                const url = urlMatch?.[0];
+                if (!url) throw new Error(`Could not parse preview URL.\nFull comment:\n${cfComment.body}`);
+                core.info(`Found preview URL: ${url}`);
+                core.setOutput('url', url);
+                return;
+              }
+
+              core.info(`Attempt ${attempt}/60: comment not found yet, waiting 10s...`);
+              await new Promise(r => setTimeout(r, 10_000));
+            }
+
+            throw new Error('Timed out waiting for Cloudflare Pages preview deployment');
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests against Cloudflare preview
+        run: npm run test:e2e
+        env:
+          BASE_URL: ${{ steps.cf.outputs.url }}
+          CI: true
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-preview
+          path: playwright-report/
+          retention-days: 7
