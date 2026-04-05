@@ -11,6 +11,11 @@ name: E2E Tests (Cloudflare Preview)
 on:
   pull_request:
 
+permissions:
+  issues: read        # needed to list PR comments
+  pull-requests: read # good practice for pull_request trigger
+  contents: read      # for actions/checkout
+
 jobs:
   e2e-preview:
     name: E2E Tests (Preview)
