@@ -18,7 +18,12 @@ export default defineConfig({
   /* Fail fast on CI if a test is accidentally left with `.only` */
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  reporter: [['list'], ['html', { open: 'never' }]],
+  reporter: [
+    ['list'],
+    ['html', { open: 'never' }],
+    ['json', { outputFile: 'test-results/playwright-results.json' }],
+    ['github'],
+  ],
   use: {
     /* When BASE_URL is set (e.g. a Cloudflare Pages preview deployment),
      * point Playwright at that URL instead of the local dev server. */
