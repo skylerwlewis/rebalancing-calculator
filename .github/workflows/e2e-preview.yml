@@ -11,6 +11,11 @@ name: E2E Tests (Cloudflare Preview)
 on:
   pull_request:
 
+permissions:
+  issues: write        # needed to post PR comments
+  pull-requests: write # needed to post PR comments
+  contents: read       # for actions/checkout
+
 jobs:
   e2e-preview:
     name: E2E Tests (Preview)
@@ -34,11 +39,17 @@ jobs:
                 owner, repo, issue_number: prNumber, per_page: 50,
               });
 
-              const cfComment = comments.find(c =>
+              const cfComments = comments.filter(c =>
                 c.user.login === 'cloudflare-workers-and-pages[bot]' &&
-                c.body.includes('Deploy successful') &&
                 c.body.includes(shortSha)
               );
+
+              const failedComment = cfComments.find(c => c.body.includes('Build failed'));
+              if (failedComment) {
+                throw new Error(`Cloudflare Pages build failed for ${shortSha}. Cannot run E2E tests.`);
+              }
+
+              const cfComment = cfComments.find(c => c.body.includes('Deploy successful'));
 
               if (cfComment) {
                 // The comment is HTML. The Preview URL cell spans two lines:
@@ -73,11 +84,68 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - run: mkdir -p test-results
+
       - name: Run E2E tests against Cloudflare preview
         run: npm run test:e2e
         env:
           BASE_URL: ${{ steps.cf.outputs.url }}
           CI: true
+
+      - name: Report E2E test results
+        if: always() && steps.cf.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let passed = 0, failed = 0, flaky = 0, skipped = 0, total = 0;
+            if (fs.existsSync('test-results/playwright-results.json')) {
+              const r = JSON.parse(fs.readFileSync('test-results/playwright-results.json', 'utf8'));
+              passed = r.stats?.expected ?? 0;
+              failed = r.stats?.unexpected ?? 0;
+              flaky = r.stats?.flaky ?? 0;
+              skipped = r.stats?.skipped ?? 0;
+              total = passed + failed + flaky + skipped;
+            }
+            const icon = failed > 0 ? '❌' : '✅';
+
+            await core.summary
+              .addHeading(`${icon} E2E Test Results (Preview)`)
+              .addTable([
+                [{data: '', header: true}, {data: 'Count', header: true}],
+                [{data: '✅ Passed'}, {data: String(passed)}],
+                [{data: '❌ Failed'}, {data: String(failed)}],
+                [{data: '🔁 Flaky'}, {data: String(flaky)}],
+                [{data: '⏭️ Skipped'}, {data: String(skipped)}],
+                [{data: 'Total'}, {data: String(total)}],
+              ])
+              .write();
+
+            const marker = '<!-- playwright-preview-results -->';
+            const body = [
+              marker,
+              `## ${icon} E2E Test Results (Preview)`,
+              '',
+              '| | Count |',
+              '|---|---|',
+              `| ✅ Passed | ${passed} |`,
+              `| ❌ Failed | ${failed} |`,
+              `| 🔁 Flaky | ${flaky} |`,
+              `| ⏭️ Skipped | ${skipped} |`,
+              `| **Total** | **${total}** |`,
+            ].join('\n');
+
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner, repo, issue_number: prNumber, per_page: 100,
+            });
+            const existing = comments.find(c => c.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
+            }
 
       - name: Upload Playwright report
         if: failure()
