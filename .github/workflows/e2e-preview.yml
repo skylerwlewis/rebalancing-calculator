@@ -6,8 +6,8 @@ name: E2E Tests (Cloudflare Preview)
 # GitHub Actions does NOT fire issue_comment events for GitHub App bot
 # comments (like cloudflare-workers-and-pages[bot]), so we cannot use
 # that trigger. Instead we poll the GitHub Comments REST API until the
-# Cloudflare bot comment containing "Deploy successful" appears, then
-# extract the Preview URL and run Playwright against it.
+# Cloudflare bot comment containing "Commit Preview URL" appears, then
+# extract the Commit Preview URL and run Playwright against it.
 on:
   pull_request:
 
@@ -21,7 +21,7 @@ jobs:
     name: E2E Tests (Preview)
     runs-on: ubuntu-latest
     steps:
-      - name: Wait for Cloudflare Pages preview URL
+      - name: Wait for Cloudflare Workers preview URL
         id: cf
         uses: actions/github-script@v7
         timeout-minutes: 10
@@ -44,22 +44,25 @@ jobs:
                 c.body.includes(shortSha)
               );
 
-              const failedComment = cfComments.find(c => c.body.includes('Build failed'));
+              const failedComment = cfComments.find(c =>
+                c.body.includes('Build failed') || c.body.includes('Deployment failed')
+              );
               if (failedComment) {
-                throw new Error(`Cloudflare Pages build failed for ${shortSha}. Cannot run E2E tests.`);
+                throw new Error(`Cloudflare Workers build failed for ${shortSha}. Cannot run E2E tests.`);
               }
 
-              const cfComment = cfComments.find(c => c.body.includes('Deploy successful'));
+              // Workers Builds adds the Commit Preview URL to the comment as soon as the
+              // version upload completes — even before the status row updates to
+              // "Deployment successful". Trigger on the URL's presence rather than the
+              // status text, since the comment isn't always updated to "Deployment successful".
+              const cfComment = cfComments.find(c => c.body.includes('Commit Preview URL'));
 
               if (cfComment) {
-                // The comment is HTML. The Preview URL cell spans two lines:
-                //   <tr><td><strong>Preview URL:</strong></td><td>
-                //   <a href='https://...'>https://...</a>
-                // Find the index of the Preview URL row, then grab the URL from the next line.
-                const lines = cfComment.body.split('\n');
-                const idx = lines.findIndex(l => l.includes('Preview URL:') && !l.includes('Branch'));
-                const urlMatch = lines[idx + 1]?.match(/https:\/\/[^\s'"<]+/);
-                const url = urlMatch?.[0];
+                // Workers Builds comment uses a Markdown table with HTML anchor tags:
+                // | ... | worker-name | abc1234 | <a href='https://...'>Commit Preview URL</a><br>... |
+                // Extract the Commit Preview URL href (version-specific, not the branch alias).
+                const urlMatch = cfComment.body.match(/<a href='(https:\/\/[^']+)'>Commit Preview URL<\/a>/);
+                const url = urlMatch?.[1];
                 if (!url) throw new Error(`Could not parse preview URL.\nFull comment:\n${cfComment.body}`);
                 core.info(`Found preview URL: ${url}`);
                 core.setOutput('url', url);
@@ -70,21 +73,19 @@ jobs:
               await new Promise(r => setTimeout(r, 10_000));
             }
 
-            throw new Error('Timed out waiting for Cloudflare Pages preview deployment');
+            throw new Error('Timed out waiting for Cloudflare Workers preview deployment');
 
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
 
       - run: npm ci
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
-
-      - run: mkdir -p test-results
 
       - name: Run E2E tests against Cloudflare preview
         run: npm run test:e2e
@@ -148,8 +149,8 @@ jobs:
             }
 
       - name: Upload Playwright report
-        if: failure()
         uses: actions/upload-artifact@v4
+        if: failure()
         with:
           name: playwright-report-preview
           path: playwright-report/

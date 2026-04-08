@@ -5,21 +5,18 @@ on:
 
 jobs:
   unit-tests:
-    name: Unit Tests (Vitest)
+    name: Unit Tests
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
       contents: read
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
-
       - run: npm ci
-
       - run: mkdir -p test-results
 
       - run: npm test -- --run --reporter=verbose --reporter=json --outputFile=test-results/vitest-results.json
@@ -76,32 +73,27 @@ jobs:
               await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
             }
 
-  e2e-tests:
-    name: E2E Tests (Playwright)
+  e2e:
+    name: E2E Tests
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
       contents: read
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
-
       - run: npm ci
-
-      # Install Chromium and its Linux system dependencies.
-      # --with-deps handles apt packages (libglib2.0, libnss3, etc.) so the
-      # headless shell can run on a clean Ubuntu runner.
+      - run: npm run build
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
-
       - run: mkdir -p test-results
-
-      - run: npm run test:e2e
-
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          CI: true
       - name: Report E2E test results
         if: always()
         uses: actions/github-script@v7
@@ -131,10 +123,10 @@ jobs:
               ])
               .write();
 
-            const marker = '<!-- playwright-test-results -->';
+            const marker = '<!-- playwright-ci-results -->';
             const body = [
               marker,
-              `## ${icon} E2E Test Results`,
+              `## ${icon} E2E Test Results (CI Build)`,
               '',
               '| | Count |',
               '|---|---|',
@@ -156,13 +148,10 @@ jobs:
             } else {
               await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
             }
-
-      # Upload the HTML report as an artifact so you can inspect failures
-      # without re-running the workflow.
       - name: Upload Playwright report
-        if: failure()
         uses: actions/upload-artifact@v4
+        if: failure()
         with:
-          name: playwright-report
+          name: playwright-report-ci
           path: playwright-report/
           retention-days: 7
