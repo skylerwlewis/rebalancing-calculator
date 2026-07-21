@@ -33,7 +33,14 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        // In CI we can target the runner's preinstalled Chrome and skip
+        // downloading Playwright-managed Chromium binaries.
+        ...(process.env.CI && process.env.PLAYWRIGHT_CHANNEL
+          ? { channel: process.env.PLAYWRIGHT_CHANNEL as 'chrome' }
+          : {}),
+      },
     },
   ],
   /* Skip starting the dev server when running against a remote URL */
