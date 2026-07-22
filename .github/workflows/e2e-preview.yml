@@ -10,4 +10,4 @@ permissions:
 
 jobs:
   e2e-preview:
-    uses: skylerwlewis/test-actions/.github/workflows/e2e-cloudflare-preview.yml@main
+    uses: skylerwlewis/test-actions/.github/workflows/e2e-cloudflare-preview.yml@v1

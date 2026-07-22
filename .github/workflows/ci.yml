@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   unit-tests:
-    uses: skylerwlewis/test-actions/.github/workflows/unit-tests-vitest.yml@main
+    uses: skylerwlewis/test-actions/.github/workflows/unit-tests-vitest.yml@v1
 
   e2e:
-    uses: skylerwlewis/test-actions/.github/workflows/e2e-ci.yml@main
+    uses: skylerwlewis/test-actions/.github/workflows/e2e-ci.yml@v1
