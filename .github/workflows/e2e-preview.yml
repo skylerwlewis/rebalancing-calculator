@@ -1,4 +1,4 @@
-name: E2E Tests (Cloudflare Preview)
+name: E2E Tests (Preview)
 
 on:
   pull_request:
