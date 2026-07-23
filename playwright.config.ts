@@ -18,6 +18,9 @@ export default defineConfig({
   /* Fail fast on CI if a test is accidentally left with `.only` */
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
+  /* Remote preview URLs are slower than local due to network + loadable hydration;
+   * give assertions more headroom. */
+  expect: { timeout: 10000 },
   reporter: [
     ['list'],
     ['html', { open: 'never' }],

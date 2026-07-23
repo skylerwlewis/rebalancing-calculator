@@ -17,3 +17,21 @@ updates:
       mui:
         patterns:
           - "@mui/*"
+      testing-library:
+        patterns:
+          - "@testing-library/*"
+      eslint:
+        patterns:
+          - "eslint"
+          - "@eslint/*"
+          - "eslint-plugin-*"
+          - "typescript-eslint"
+          - "globals"
+      vite:
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+          - "vitest"
+      cloudflare:
+        patterns:
+          - "@cloudflare/*"
