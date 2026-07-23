@@ -1,13 +1,31 @@
 name: E2E Tests (Preview)
 
 on:
-  pull_request:
-
-permissions:
-  issues: write
-  pull-requests: write
-  contents: read
+  check_run:
+    types: [completed]
 
 jobs:
+  find-preview:
+    if: |
+      github.event.check_run.conclusion == 'success' &&
+      startsWith(github.event.check_run.name, 'Workers Builds:')
+    uses: skylerwlewis/test-actions/.github/workflows/find-preview-for-check-run.yml@v1
+    permissions:
+      pull-requests: read
+      contents: read
+      checks: write
+
   e2e-preview:
-    uses: skylerwlewis/test-actions/.github/workflows/e2e-preview.yml@v1
+    needs: find-preview
+    if: needs.find-preview.outputs.pr-number != '' && needs.find-preview.outputs.preview-url != ''
+    uses: skylerwlewis/test-actions/.github/workflows/e2e-from-url.yml@v1
+    with:
+      base-url: ${{ needs.find-preview.outputs.preview-url }}
+      pr-number: ${{ fromJSON(needs.find-preview.outputs.pr-number) }}
+      checkout-ref: ${{ needs.find-preview.outputs.head-sha }}
+      check-run-id: ${{ needs.find-preview.outputs.check-run-id }}
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: read
+      checks: write
