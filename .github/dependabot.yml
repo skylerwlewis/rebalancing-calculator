@@ -17,3 +17,6 @@ updates:
       mui:
         patterns:
           - "@mui/*"
+      testing-library:
+        patterns:
+          - "@testing-library/*"
