@@ -7,7 +7,7 @@ import { grey } from '@mui/material/colors';
 import { DataGrid, GridActionsCellItem, GridComparatorFn, GridPreProcessEditCellProps, GridRenderCellParams, GridRowParams, GridTreeNodeWithRender } from '@mui/x-data-grid';
 import Big from 'big.js';
 import { useContext, useMemo, useState } from 'react';
-import { ONE_HUNDRED } from '../calculator/BigConstants';
+import { ONE_HUNDRED, ONE_HUNDREDTH } from '../calculator/BigConstants';
 import calculate, { CalculatorOutput, fromFundInputItem } from '../calculator/Calculator';
 import ShareModal from '../share/modal/ShareModal';
 import { isBig, setBigFromString, sum } from '../utils/BigUtils';
@@ -36,6 +36,21 @@ const renderValue = (params: GridRenderCellParams<FundOutputItemStrings, any, an
 };
 
 const numericComparator: GridComparatorFn<string> = (v1, v2) => Number(v1) - Number(v2);
+
+// Pure equivalents of the transforms `setBigFromString` / `setPercentage` +
+// `isValidPercentage` apply to state, used to recompute a row synchronously
+// in `processRowUpdate` (see comment there for why this is necessary).
+const parseCurrentBalanceEdit = (stringValue: string, previous: Big): Big => {
+  const scrubbed = stringValue.replaceAll(',', '');
+  return isBig(scrubbed) ? new Big(scrubbed) : previous;
+};
+
+const parseTargetPercentEdit = (stringValue: string, previous: Big): Big => {
+  const scrubbed = stringValue.replaceAll(',', '');
+  if (!isBig(scrubbed)) return previous;
+  const rawPercent = new Big(scrubbed);
+  return isValidPercentage(rawPercent) ? ONE_HUNDREDTH.times(rawPercent) : previous;
+};
 
 const InputView = () => {
 
@@ -112,7 +127,8 @@ const InputView = () => {
   const handleClose = () => setOpenModal(false);
 
   return (
-    <Stack alignItems='flex-start' sx={{
+    <Stack sx={{
+      alignItems: 'flex-start',
       height: '100%',
       width: '100%'
     }}>
@@ -172,7 +188,35 @@ const InputView = () => {
               setBigFromString(newRow.currentBalanceString, setter.currentBalanceSetters.setStringValue, setter.currentBalanceSetters.setBigValue);
               setBigFromString(newRow.targetPercentString, setter.targetPercentSetters.setStringValue, setIf(isValidPercentage, setPercentage(setter.targetPercentSetters.setBigValue)));
             }
-            return newRow;
+
+            // DataGrid applies whatever this function returns directly to its
+            // internal row cache, so returning `newRow` unchanged would leave
+            // its non-editable derived columns (amountToInvestString, etc.)
+            // showing pre-edit values until an unrelated render resynced them
+            // from `rows`. Recompute this row's derived fields synchronously
+            // so the committed row is already correct.
+            const updatedFundInputItems = fundInputItems.map(fundInputItem =>
+              fundInputItem.internalId === oldRow.internalId
+                ? {
+                  ...fundInputItem,
+                  name: newRow.nameString,
+                  currentBalance: parseCurrentBalanceEdit(newRow.currentBalanceString, fundInputItem.currentBalance),
+                  targetPercent: parseTargetPercentEdit(newRow.targetPercentString, fundInputItem.targetPercent)
+                }
+                : fundInputItem
+            );
+            const updatedIndex = updatedFundInputItems.findIndex(fundInputItem => fundInputItem.internalId === oldRow.internalId);
+            const updatedItem = updatedFundInputItems[updatedIndex];
+            const updatedOutputItem = calculate({ amountToInvest, fundInputItems: updatedFundInputItems.map(fromFundInputItem) }).outputItems[updatedIndex];
+            return {
+              ...newRow,
+              currentBalanceString: updatedItem.currentBalance.toString(),
+              targetPercentString: ONE_HUNDRED.times(updatedItem.targetPercent).toString(),
+              currentPercentString: ONE_HUNDRED.times(updatedOutputItem.currentPercent).round(3).toFixed(3),
+              amountToInvestString: updatedOutputItem.amountToInvest.toString(),
+              balanceAfterString: updatedOutputItem.balanceAfter.toString(),
+              percentAfterString: ONE_HUNDRED.times(updatedOutputItem.percentAfter).round(3).toFixed(3)
+            };
           }}
           columns={[
             {
@@ -186,7 +230,7 @@ const InputView = () => {
               field: 'targetPercentString',
               headerName: 'Target Percent',
               editable: true,
-              valueFormatter: ({ value }) => value + '%',
+              valueFormatter: (value) => value + '%',
               preProcessEditCellProps: (params: GridPreProcessEditCellProps) => {
                 const isBigValue = isBig(params.props.value);
                 const validPercent = isBigValue ? isValidPercentage(new Big(params.props.value)) : false
@@ -202,7 +246,7 @@ const InputView = () => {
               field: 'currentBalanceString',
               headerName: 'Current Balance',
               editable: true,
-              valueFormatter: ({ value }) => currencyFormatter.format(value),
+              valueFormatter: (value) => currencyFormatter.format(value),
               preProcessEditCellProps: (params: GridPreProcessEditCellProps) => {
                 const hasError = !isBig(params.props.value);
                 return { ...params.props, error: hasError };
@@ -216,7 +260,7 @@ const InputView = () => {
             {
               field: 'currentPercentString',
               headerName: 'Current Percent',
-              valueFormatter: ({ value }) => value + '%',
+              valueFormatter: (value) => value + '%',
               renderCell: renderValue,
               flex: 1,
               sortComparator: numericComparator,
@@ -226,7 +270,7 @@ const InputView = () => {
             {
               field: 'amountToInvestString',
               headerName: 'Amount to Invest',
-              valueFormatter: ({ value }) => currencyFormatter.format(value),
+              valueFormatter: (value) => currencyFormatter.format(value),
               renderCell: renderValue,
               flex: 1,
               sortComparator: numericComparator,
@@ -236,7 +280,7 @@ const InputView = () => {
             {
               field: 'balanceAfterString',
               headerName: 'Balance After Investment',
-              valueFormatter: ({ value }) => currencyFormatter.format(value),
+              valueFormatter: (value) => currencyFormatter.format(value),
               renderCell: renderValue,
               flex: 1,
               sortComparator: numericComparator,
@@ -246,7 +290,7 @@ const InputView = () => {
             {
               field: 'percentAfterString',
               headerName: 'Percent After Investment',
-              valueFormatter: ({ value }) => value + '%',
+              valueFormatter: (value) => value + '%',
               renderCell: renderValue,
               flex: 1,
               sortComparator: numericComparator,
@@ -271,11 +315,13 @@ const InputView = () => {
         />
       </Box>
       <Typography
-        fontSize='0.8125rem'
-        lineHeight={1.5}
-        zIndex={999}
-        marginLeft='0.25rem'
-        marginTop='calc(-0.8125rem * 1.5)'
+        sx={{
+          fontSize: '0.8125rem',
+          lineHeight: 1.5,
+          zIndex: 999,
+          marginLeft: '0.25rem',
+          marginTop: 'calc(-0.8125rem * 1.5)'
+        }}
       >A <Link
         href="https://www.skylerlewis.io"
         target='_blank'
