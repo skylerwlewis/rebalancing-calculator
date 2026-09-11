@@ -36,10 +36,8 @@ const ShareModal = ({
           style={{ width: '100%' }}
           disabled={true}
           value={linkUrl}
-          slotProps={{
-            input: {
-              endAdornment: <Button onClick={() => copyTextToClipboard(linkUrl)}><ContentCopyIcon /></Button>
-            }
+          InputProps={{
+            endAdornment: <Button onClick={() => copyTextToClipboard(linkUrl)}><ContentCopyIcon /></Button>
           }}
         />
       </ModalBox>

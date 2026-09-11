@@ -71,22 +71,32 @@ test.describe('DataGrid regression: editing one row must update all rows', () =>
   test('editing VFIAX balance updates calculated fields in OTHER rows (regression)', async ({ page }) => {
     const balanceCell = fundRow(page, 'VFIAX').locator('[data-field="currentBalanceString"]');
 
-    // Double-click enters cell edit mode reliably across DataGrid versions.
-    await balanceCell.dblclick();
+    // Single click to focus/select the cell — does NOT enter edit mode yet.
+    await balanceCell.click();
 
+    // Pressing a printable key on a focused DataGrid cell calls
+    //   startCellEditMode({ id, field, deleteValue: true, initialValue: '2' })
+    // DataGrid enters edit mode with the old value cleared and '2' as the
+    // initial character.  No intermediate empty-string state means no
+    // validation error that would cause Tab to revert to the old value.
+    await page.keyboard.press('2');
+
+    // Wait for the edit-mode input to appear before typing further characters.
+    // page.keyboard.type() dispatches events before React can re-render the
+    // new input element, so '0' and '0' would be missed.  Waiting for the
+    // input element and then calling type() on it directly is reliable.
     const editInput = balanceCell.locator('input');
     await editInput.waitFor({ state: 'visible' });
 
-    // fill() clears the existing value and sets the new one directly, avoiding
-    // version-specific assumptions about keypress-driven edit-start behavior.
-    await editInput.fill('200');
-    await expect(editInput).toHaveValue('200');
+    // Append the remaining digits directly on the input element
+    await editInput.type('00');
 
-    // DataGrid's GridEditInputCell debounces setEditCellValue() by 200ms in its
-    // onChange handler regardless of how the input's value was set. If Tab
-    // fires before the debounce resolves, stopCellEditMode reads the stale
-    // pre-edit value and the cell never actually leaves edit mode. Waiting
-    // 250ms lets the debounce fire so React state reflects '200' before we commit.
+    // DataGrid v6's GridEditInputCell debounces setEditCellValue() by 200ms
+    // in its onChange handler.  If Tab fires before the debounce resolves,
+    // stopCellEditMode reads the stale pre-edit value from React state and
+    // calls processRowUpdate with the OLD balance.  Waiting 250ms lets the
+    // debounce fire so React state reflects '200' before we commit.
+    await expect(editInput).toHaveValue('200');
     await page.waitForTimeout(250);
 
     // Tab commits the edit (triggers processRowUpdate) and moves focus away
