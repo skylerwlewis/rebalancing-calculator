@@ -20,24 +20,3 @@ updates:
       # (">=4.8.4 <6.1.0"). Unblock when typescript-eslint releases TS 7 support.
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
-      # react@19 / @mui/material(-icons)@9 upgrade is a deliberate, larger
-      # change under manual review on deps/113-datagrid-followup, not a
-      # technical blocker. Unblock by merging that branch and removing these
-      # entries.
-      - dependency-name: "react"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "react-dom"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@types/react"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@types/react-dom"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@mui/material"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@mui/icons-material"
-        update-types: ["version-update:semver-major"]
-      # 6.18.2 is pinned outright (not just major bumps): it's the last
-      # version before the row-edit regression under review on
-      # deps/113-datagrid-followup. Unblock by merging that branch and
-      # removing this entry.
-      - dependency-name: "@mui/x-data-grid"

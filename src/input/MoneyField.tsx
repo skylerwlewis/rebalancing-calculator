@@ -26,8 +26,10 @@ const MoneyField = (props: BigFieldProps) => {
       {...baseTextFieldProps}
       value={props.stringValue}
       error={!isBigValue}
-      InputProps={{
-        startAdornment: <InputAdornment position='start'>$</InputAdornment>
+      slotProps={{
+        input: {
+          startAdornment: <InputAdornment position='start'>$</InputAdornment>
+        }
       }}
       onChange={setBigFromInput(props.setStringValue, props.setBigValue)}
       helperText={!isBigValue ? 'Value should be numeric' : ''} />
