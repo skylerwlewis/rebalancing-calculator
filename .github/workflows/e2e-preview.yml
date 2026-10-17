@@ -3,12 +3,19 @@ name: E2E Tests (Preview)
 on:
   check_run:
     types: [completed]
+  # Covers a PR opened after its Cloudflare build already finished, when the
+  # check_run event above found no open PR to test.
+  pull_request:
+    types: [opened, reopened]
 
 jobs:
   find-preview:
     if: |
-      github.event.check_run.conclusion == 'success' &&
-      startsWith(github.event.check_run.name, 'Workers Builds:')
+      (github.event_name == 'check_run' &&
+        github.event.check_run.conclusion == 'success' &&
+        startsWith(github.event.check_run.name, 'Workers Builds:')) ||
+      (github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository)
     uses: skylerwlewis/test-actions/.github/workflows/find-preview-for-check-run.yml@v1
     permissions:
       pull-requests: read
