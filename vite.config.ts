@@ -23,7 +23,14 @@ export default defineConfig({
       },
     ],
   },
-  plugins: [react(), cloudflare()],
+  plugins: [
+    react(),
+    // @cloudflare/vite-plugin 1.58.0+ breaks Vitest startup ("There is already a server
+    // associated with the config"): https://github.com/cloudflare/workers-sdk/issues/15969
+    // Unit tests run in jsdom and don't need the Workers runtime, so skip the plugin under
+    // Vitest. Remove this once a fixed release (v2) is adopted.
+    ...(process.env.VITEST ? [] : [cloudflare()]),
+  ],
   test: {
     environment: 'jsdom',
     globals: true,
