@@ -5,12 +5,11 @@ import ShareIcon from '@mui/icons-material/Share';
 import { Box, Button, ButtonGroup, Container, Link, Stack, Typography } from '@mui/material';
 import { grey } from '@mui/material/colors';
 import { DataGrid, GridActionsCellItem, GridCellParams, GridComparatorFn, GridPreProcessEditCellProps, GridRenderCellParams, GridRowParams, GridValueFormatterParams } from '@mui/x-data-grid';
-import Big from 'big.js';
 import { useContext, useMemo, useState } from 'react';
 import { ONE_HUNDRED } from '../calculator/BigConstants';
 import calculate, { CalculatorOutput, fromFundInputItem } from '../calculator/Calculator';
 import ShareModal from '../share/modal/ShareModal';
-import { isBig, setBigFromString, sum } from '../utils/BigUtils';
+import { setBigFromString, sum, toBig } from '../utils/BigUtils';
 import { isValidPercentage, setPercentage } from '../utils/PercentUtils';
 import { setIf } from '../utils/SetUtils';
 import { FundInputItemStrings } from './FundInputItem';
@@ -192,8 +191,8 @@ const InputView = () => {
               valueFormatter: ({ value }: GridValueFormatterParams<string>) => value + '%',
               preProcessEditCellProps: (params: GridPreProcessEditCellProps<string, FundOutputItemStrings>) => {
                 const value = params.props.value;
-                const isBigValue = value !== undefined && isBig(value);
-                const validPercent = isBigValue ? isValidPercentage(new Big(value)) : false
+                const bigValue = value === undefined ? undefined : toBig(value);
+                const validPercent = bigValue !== undefined && isValidPercentage(bigValue);
                 return { ...params.props, error: !validPercent };
               },
               renderCell: renderValue,
@@ -209,7 +208,7 @@ const InputView = () => {
               valueFormatter: ({ value }: GridValueFormatterParams<string>) => formatCurrency(value),
               preProcessEditCellProps: (params: GridPreProcessEditCellProps<string, FundOutputItemStrings>) => {
                 const value = params.props.value;
-                const hasError = value === undefined || !isBig(value);
+                const hasError = value === undefined || toBig(value) === undefined;
                 return { ...params.props, error: hasError };
               },
               renderCell: renderValue,
