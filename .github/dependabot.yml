@@ -17,17 +17,19 @@ updates:
         patterns:
           - "*" # Groups every security update into one single PR
     ignore:
-      # eslint@10 / @eslint/js@10 conflict with eslint-plugin-react@7.37.5's peer
-      # range ("^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7"). Unblock when
-      # eslint-plugin-react releases eslint 10 support.
+      # eslint-plugin-react@7.37.5 (latest) declares peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7",
+      # so it doesn't support eslint 10 yet, and @eslint/js@10 declares peer eslint@"^10.0.0".
+      # Unblock when eslint-plugin-react releases a version supporting eslint 10.
       - dependency-name: "eslint"
         update-types: ["version-update:semver-major"]
       - dependency-name: "@eslint/js"
         update-types: ["version-update:semver-major"]
-      # typescript@7 conflicts with typescript-eslint@8.70.0's peer range
-      # (">=4.8.4 <6.1.0"). Unblock when typescript-eslint releases TS 7 support.
+      # typescript-eslint@8.71.2 (latest) declares peer typescript@">=4.8.4 <6.1.0", and TypeScript 7
+      # has no JS API for it to use. This holds every release from 6.1.0 on, not just majors, because
+      # a 6.1 minor would already break that peer range. Unblock when typescript-eslint releases a
+      # version supporting the newer TypeScript.
       - dependency-name: "typescript"
-        update-types: ["version-update:semver-major"]
+        versions: [">=6.1.0"]
       # react@19 / @mui/material(-icons)@9 upgrade is a deliberate, larger
       # change under manual review on deps/113-datagrid-followup, not a
       # technical blocker. Unblock by merging that branch and removing these

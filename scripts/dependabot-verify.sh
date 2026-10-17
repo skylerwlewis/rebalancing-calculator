@@ -11,12 +11,12 @@
 #   Preconditions Run from anywhere inside the repo. Node 24 + npm on PATH.
 #   Side effects  Rewrites package-lock.json (npm install) and node_modules
 #                 (npm ci). Installs the Playwright chromium build. Writes
-#                 public/ (gatsby build) and test-results/.
+#                 the build output (npm run build) and test-results/.
 #   Exit          0 if every step passed, 1 otherwise. Fail-fast: remaining steps
 #                 are reported as SKIPPED rather than silently omitted.
 #
-# Steps mirror CI (typecheck, jest, e2e) and add the checks CI does not run on PRs:
-# `npm ci` lock validation and an npm audit summary.
+# Steps mirror CI (typecheck, lint, unit tests, build, e2e) and add the checks CI does
+# not run on PRs: `npm ci` lock validation and an npm audit summary.
 
 set -uo pipefail
 
@@ -49,7 +49,8 @@ run_step() {
 
   echo ">>> ${name}: $*" >&2
   local start=$SECONDS
-  if "$@" >"$log" 2>&1; then
+  # No stdin, so watch-capable runners (Vitest) run once instead of waiting for input.
+  if "$@" </dev/null >"$log" 2>&1; then
     NAMES+=("$name"); RESULTS+=("pass ($((SECONDS - start))s)")
   else
     NAMES+=("$name"); RESULTS+=("FAIL ($((SECONDS - start))s)")
@@ -66,6 +67,7 @@ run_step lockfile-ci npm ci
 run_step typecheck npm run typecheck
 
 if [[ $QUICK -eq 0 ]]; then
+  run_step lint npm run lint
   run_step unit-tests npm test
   run_step build npm run build
   if [[ $SKIP_E2E -eq 0 ]]; then

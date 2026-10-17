@@ -1,23 +1,12 @@
 import { useContext } from 'react';
-import { createContext, PropsWithChildren, useMemo } from 'react';
-import { InputContext } from '../input/InputProvider';
+import { PropsWithChildren, useMemo } from 'react';
+import { InputContext } from '../input/InputContext';
+import { InputUrlParamContext } from './InputUrlParamContext';
 import LZString from 'lz-string';
 import { FundInputItemParams, InputUrlParams, toFundInputItemParams, toMinifiedInputUrlParams } from './InputUrlParams';
 import JSON5 from 'json5'
 
-type InputUrlParamContextState = {
-  input: InputUrlParams;
-  inputUrlJsonString: string;
-}
-
-const initialInputState: InputUrlParamContextState = {
-  input: {},
-  inputUrlJsonString: ''
-};
-
-export const InputUrlParamContext = createContext<InputUrlParamContextState>(initialInputState);
-
-const InputUrlParamProvider = ({ children }: PropsWithChildren<{}>) => {
+const InputUrlParamProvider = ({ children }: PropsWithChildren) => {
 
   const { amountToInvest, fundInputItems } = useContext(InputContext);
 

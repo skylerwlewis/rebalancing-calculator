@@ -1,37 +1,25 @@
-import { createContext, PropsWithChildren, useMemo, } from 'react';
+import { PropsWithChildren, useMemo, } from 'react';
 import { useLocation } from 'react-router-dom';
 import LZString from 'lz-string';
 import { fromMinifiedInputUrlParams, InputUrlParams, MinifiedInputUrlParams } from './InputUrlParams';
+import { UrlParamInputContext } from './UrlParamInputContext';
 import JSON5 from 'json5'
 import escapeStringRegexp from 'escape-string-regexp';
-
-type UrlParamInputContextState = {
-  baseUrl: string;
-  queryStrings: string;
-  urlParamsInput: InputUrlParams;
-}
-
-const initialInputState: UrlParamInputContextState = {
-  baseUrl: '',
-  queryStrings: '',
-  urlParamsInput: {}
-};
 
 const getParsedInput = (urlParamsInputString: string | null): MinifiedInputUrlParams => {
   if (!urlParamsInputString) {
     return {};
   }
   try {
-    const decompressedJsonString = LZString.decompressFromEncodedURIComponent(urlParamsInputString);
+    // lz-string returns null for malformed input even though its typings declare `string`.
+    const decompressedJsonString = LZString.decompressFromEncodedURIComponent(urlParamsInputString) as string | null;
     return decompressedJsonString === null ? {} : JSON5.parse(decompressedJsonString);
-  } catch (error) {
+  } catch {
     return {};
   }
 }
 
-export const UrlParamInputContext = createContext<UrlParamInputContextState>(initialInputState);
-
-const UrlParamInputProvider = ({ children }: PropsWithChildren<{}>) => {
+const UrlParamInputProvider = ({ children }: PropsWithChildren) => {
 
   const windowLocationHref = window.location.href;
   const locationSearch = useLocation().search;

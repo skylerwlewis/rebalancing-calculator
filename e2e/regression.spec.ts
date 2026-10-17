@@ -84,12 +84,12 @@ test.describe('DataGrid regression: editing one row must update all rows', () =>
     // Wait for the edit-mode input to appear before typing further characters.
     // page.keyboard.type() dispatches events before React can re-render the
     // new input element, so '0' and '0' would be missed.  Waiting for the
-    // input element and then calling type() on it directly is reliable.
+    // input element and then calling pressSequentially() on it directly is reliable.
     const editInput = balanceCell.locator('input');
     await editInput.waitFor({ state: 'visible' });
 
     // Append the remaining digits directly on the input element
-    await editInput.type('00');
+    await editInput.pressSequentially('00');
 
     // DataGrid v6's GridEditInputCell debounces setEditCellValue() by 200ms
     // in its onChange handler.  If Tab fires before the debounce resolves,

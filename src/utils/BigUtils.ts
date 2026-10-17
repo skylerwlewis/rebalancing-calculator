@@ -1,6 +1,6 @@
 
 import { Big } from 'big.js';
-import { Dispatch, SetStateAction } from 'react';
+import { ChangeEvent, Dispatch, SetStateAction } from 'react';
 import { ZERO } from '../calculator/BigConstants';
 
 export const sum = (...values: Big[]) => values.reduce((prev, curr) => prev.plus(curr), ZERO);
@@ -13,7 +13,7 @@ export const isBig = (value: string) => {
   try {
     new Big(value.replaceAll(',', ''));
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 };
@@ -23,5 +23,11 @@ export const setBigFromString = (stringValue: string, setStringValue: Dispatch<S
   const stringValueScrubbed = stringValue.replaceAll(',', '');
   if (isBig(stringValueScrubbed)) {
     setBigValue(new Big(stringValueScrubbed));
+  }
+};
+
+export const setBigFromInput = (setStringValue: Dispatch<SetStateAction<string>>, setBigValue: Dispatch<SetStateAction<Big>>) => {
+  return (event: ChangeEvent<HTMLInputElement>) => {
+    setBigFromString(event.target.value, setStringValue, setBigValue);
   }
 };

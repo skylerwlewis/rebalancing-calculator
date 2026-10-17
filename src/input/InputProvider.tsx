@@ -1,76 +1,14 @@
 import { Big } from 'big.js';
-import { createContext, PropsWithChildren, useContext, useMemo, useState } from 'react';
-import { ONE_HUNDREDTH, ZERO } from '../calculator/BigConstants';
+import { PropsWithChildren, useContext, useMemo, useState } from 'react';
+import { ZERO } from '../calculator/BigConstants';
 import { BigFieldSetters } from './BigFieldProps';
 import FundInputItem, { FundInputItemStrings, toStrings } from './FundInputItem';
 import { fromFundInputItemParams } from '../share/InputUrlParams';
 import { setItemProperty } from '../utils/SetUtils';
-import { StringFieldSetters } from './StringFieldProps';
-import { UrlParamInputContext } from '../share/UrlParamInputProvider';
-export interface FundInputItemSetter {
-  internalId: number,
-  nameSetters: StringFieldSetters;
-  currentBalanceSetters: BigFieldSetters;
-  targetPercentSetters: BigFieldSetters;
-}
+import { UrlParamInputContext } from '../share/UrlParamInputContext';
+import { FundInputItemSetter, initialAmountToInvest, initialInputState, InputContext } from './InputContext';
 
-type InputContextState = {
-  amountToInvest: Big,
-  amountToInvestSetters: BigFieldSetters,
-  fundInputItems: FundInputItem[];
-  fundInputItemSetters: FundInputItemSetter[];
-  addFundInputItem: () => void;
-  removeFundInputItem: (index: number) => void;
-}
-
-const initialAmountToInvest = new Big('100');
-const initialItems: FundInputItem[] = [
-  {
-    internalId: 0,
-    name: 'VFIAX',
-    currentBalance: new Big('100'),
-    targetPercent: ONE_HUNDREDTH.times(new Big('40'))
-  },
-  {
-    internalId: 1,
-    name: 'VTSAX',
-    currentBalance: new Big('100'),
-    targetPercent: ONE_HUNDREDTH.times(new Big('60'))
-  }
-]
-
-const initialBigFieldSetter = (big: Big): BigFieldSetters => {
-  return {
-    stringValue: big.toString(),
-    setStringValue: () => { },
-    setBigValue: () => { }
-  }
-}
-const initialStringFieldSetter = (string: string): StringFieldSetters => {
-  return {
-    stringValue: string,
-    setStringValue: () => { }
-  }
-}
-const initialInputState: InputContextState = {
-  amountToInvest: initialAmountToInvest,
-  amountToInvestSetters: initialBigFieldSetter(initialAmountToInvest),
-  fundInputItems: initialItems,
-  fundInputItemSetters: initialItems.map(fundInputItem => {
-    return {
-      internalId: fundInputItem.internalId,
-      nameSetters: initialStringFieldSetter(fundInputItem.name),
-      currentBalanceSetters: initialBigFieldSetter(fundInputItem.currentBalance),
-      targetPercentSetters: initialBigFieldSetter(fundInputItem.targetPercent)
-    }
-  }),
-  addFundInputItem: () => { },
-  removeFundInputItem: () => { }
-};
-
-export const InputContext = createContext<InputContextState>(initialInputState);
-
-const InputProvider = ({ children }: PropsWithChildren<{}>) => {
+const InputProvider = ({ children }: PropsWithChildren) => {
 
   const { urlParamsInput } = useContext(UrlParamInputContext);
 

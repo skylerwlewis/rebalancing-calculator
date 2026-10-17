@@ -10,8 +10,8 @@
     "lint": "eslint .",
     "test": "vitest",
     "test:e2e": "playwright test",
-    "preview": "npm run build && wrangler dev",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "preview": "npm run build && wrangler dev"
   },
   "dependencies": {
     "@emotion/react": "^11.13.3",
@@ -40,13 +40,13 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "eslint": "^9.39.5",
-    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.6",
-    "globals": "^17.12.0",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.13.0",
     "jsdom": "^30.0.1",
-    "typescript": "^5.5.3",
-    "typescript-eslint": "^8.70.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0",
     "wrangler": "^4.103.0"

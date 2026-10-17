@@ -2,7 +2,7 @@ import { Box, BoxProps } from '@mui/material';
 import React from 'react';
 
 const modalBoxSx = {
-  position: 'absolute' as 'absolute',
+  position: 'absolute' as const,
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
@@ -14,5 +14,6 @@ const modalBoxSx = {
 };
 
 const ModalBox = React.forwardRef((props: BoxProps, ref) => <Box {...props} ref={ref} sx={modalBoxSx} />);
+ModalBox.displayName = 'ModalBox';
 
 export default ModalBox;

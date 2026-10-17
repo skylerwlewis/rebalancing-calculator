@@ -35,12 +35,12 @@ const calculate = ({ amountToInvest, fundInputItems }: CalculatorInput): Calcula
     // Scale target percents down to total 100% if the total entered is over 100%
   const targetPercents = fundInputItems.map(fundInputItem => fundInputItem.targetPercent);
   const totalTargetPercents = sum(...targetPercents);
-  const fixedTargetPercents = ONE.eq(totalTargetPercents) ? targetPercents : ZERO.eq(totalTargetPercents) ? new Array(targetPercents.length).fill(ZERO) : fundInputItems.map(fundInputItem => fundInputItem.targetPercent.div(totalTargetPercents));
+  const fixedTargetPercents = ONE.eq(totalTargetPercents) ? targetPercents : ZERO.eq(totalTargetPercents) ? new Array<Big>(targetPercents.length).fill(ZERO) : fundInputItems.map(fundInputItem => fundInputItem.targetPercent.div(totalTargetPercents));
 
   // Calculate total current balance and current percents
   const currentBalances = fundInputItems.map(fundInputItem => fundInputItem.currentBalance);
   const totalCurrentBalance = sum(...currentBalances);
-  const currentPercents = ZERO.eq(totalCurrentBalance) ? new Array(fundInputItems.length).fill(ZERO) : fundInputItems.map(fundInputItem => fundInputItem.currentBalance.div(totalCurrentBalance));
+  const currentPercents = ZERO.eq(totalCurrentBalance) ? new Array<Big>(fundInputItems.length).fill(ZERO) : fundInputItems.map(fundInputItem => fundInputItem.currentBalance.div(totalCurrentBalance));
 
   // Calculate initial target balances based on simple percentages of the new total balance
   const totalFutureBalance = totalCurrentBalance.plus(amountToInvest);
@@ -58,7 +58,7 @@ const calculate = ({ amountToInvest, fundInputItems }: CalculatorInput): Calcula
   const balanceDifferenceTotal = sum(...balanceDifferences);
 
   // Spread our amountToInvest over the balance differences, closing the gap as much as possible, weighting by balance difference
-  const differenceScaled = ZERO.eq(balanceDifferenceTotal) ? new Array(balanceDifferences.length).fill(ZERO) : balanceDifferences.map(balanceDifference => min(balanceDifference, amountToInvest.times(balanceDifference).div(balanceDifferenceTotal)));
+  const differenceScaled = ZERO.eq(balanceDifferenceTotal) ? new Array<Big>(balanceDifferences.length).fill(ZERO) : balanceDifferences.map(balanceDifference => min(balanceDifference, amountToInvest.times(balanceDifference).div(balanceDifferenceTotal)));
   const differenceScaledTotal = sum(...differenceScaled);
 
   // If we have any amountToInvest left over, invest that according to our original target percents
@@ -75,7 +75,7 @@ const calculate = ({ amountToInvest, fundInputItems }: CalculatorInput): Calcula
   // Calculate balances and percents after our final investments
   const balanceAfters = fixedTotals.map((fixedTotal, index) => fixedTotal.plus(fundInputItems[index].currentBalance));
   const balanceAftersTotal = sum(...balanceAfters);
-  const percentAfters = ZERO.eq(balanceAftersTotal) ? new Array(balanceAfters.length).fill(ZERO) : balanceAfters.map(balanceAfter => balanceAfter.div(balanceAftersTotal));
+  const percentAfters = ZERO.eq(balanceAftersTotal) ? new Array<Big>(balanceAfters.length).fill(ZERO) : balanceAfters.map(balanceAfter => balanceAfter.div(balanceAftersTotal));
 
   return {
     outputItems: fixedTotals.map((fixedTotal, index) => {

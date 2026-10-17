@@ -4,7 +4,7 @@ import GitHubIcon from '@mui/icons-material/GitHub';
 import ShareIcon from '@mui/icons-material/Share';
 import { Box, Button, ButtonGroup, Container, Link, Stack, Typography } from '@mui/material';
 import { grey } from '@mui/material/colors';
-import { DataGrid, GridActionsCellItem, GridComparatorFn, GridPreProcessEditCellProps, GridRenderCellParams, GridRowParams, GridTreeNodeWithRender } from '@mui/x-data-grid';
+import { DataGrid, GridActionsCellItem, GridCellParams, GridComparatorFn, GridPreProcessEditCellProps, GridRenderCellParams, GridRowParams, GridValueFormatterParams } from '@mui/x-data-grid';
 import Big from 'big.js';
 import { useContext, useMemo, useState } from 'react';
 import { ONE_HUNDRED } from '../calculator/BigConstants';
@@ -14,7 +14,7 @@ import { isBig, setBigFromString, sum } from '../utils/BigUtils';
 import { isValidPercentage, setPercentage } from '../utils/PercentUtils';
 import { setIf } from '../utils/SetUtils';
 import { FundInputItemStrings } from './FundInputItem';
-import { InputContext } from './InputProvider';
+import { InputContext } from './InputContext';
 import MoneyField from './MoneyField';
 
 const githubLink = 'https://github.com/skylerwlewis/rebalancing-calculator'
@@ -24,6 +24,9 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
   currency: 'USD',
 });
 
+// Values are Big.js decimal strings; Intl.NumberFormat formats numeric strings exactly (no float conversion).
+const formatCurrency = (value: string) => currencyFormatter.format(value as `${number}`);
+
 interface FundOutputItemStrings extends FundInputItemStrings {
   amountToInvestString: string,
   currentPercentString: string,
@@ -31,7 +34,7 @@ interface FundOutputItemStrings extends FundInputItemStrings {
   percentAfterString: string
 }
 
-const renderValue = (params: GridRenderCellParams<FundOutputItemStrings, any, any, GridTreeNodeWithRender>) => {
+const renderValue = (params: GridRenderCellParams<FundOutputItemStrings, string, string>) => {
   return params.row.internalId === -1 ? (<strong>{params.formattedValue}</strong>) : params.formattedValue;
 };
 
@@ -109,7 +112,7 @@ const InputView = () => {
   );
 
   const [openModal, setOpenModal] = useState<string | boolean>(false);
-  const handleClose = () => setOpenModal(false);
+  const handleClose = () => { setOpenModal(false); };
 
   return (
     <Stack alignItems='flex-start' sx={{
@@ -153,7 +156,7 @@ const InputView = () => {
           },
         }}>
           <Button startIcon={<AddCircleIcon />} onClick={() => { addFundInputItem() }}>Add fund</Button>
-          <Button startIcon={<ShareIcon />} onClick={() => setOpenModal('share')}>Share</Button>
+          <Button startIcon={<ShareIcon />} onClick={() => { setOpenModal('share'); }}>Share</Button>
           <Button startIcon={<GitHubIcon />} href={githubLink}>View on Github</Button>
         </ButtonGroup>
         <ShareModal open={openModal === 'share'} handleClose={handleClose} />
@@ -162,8 +165,8 @@ const InputView = () => {
         <DataGrid
           disableColumnMenu={true}
           autoPageSize={true}
-          getRowId={row => row.internalId}
-          isCellEditable={params => params.row.internalId !== -1}
+          getRowId={(row: FundOutputItemStrings) => row.internalId}
+          isCellEditable={(params: GridCellParams<FundOutputItemStrings>) => params.row.internalId !== -1}
           rows={initialTableData}
           processRowUpdate={(newRow: FundOutputItemStrings, oldRow: FundOutputItemStrings) => {
             const setters = fundInputItemSetters.filter(item => item.internalId === oldRow.internalId);
@@ -186,10 +189,11 @@ const InputView = () => {
               field: 'targetPercentString',
               headerName: 'Target Percent',
               editable: true,
-              valueFormatter: ({ value }) => value + '%',
-              preProcessEditCellProps: (params: GridPreProcessEditCellProps) => {
-                const isBigValue = isBig(params.props.value);
-                const validPercent = isBigValue ? isValidPercentage(new Big(params.props.value)) : false
+              valueFormatter: ({ value }: GridValueFormatterParams<string>) => value + '%',
+              preProcessEditCellProps: (params: GridPreProcessEditCellProps<string, FundOutputItemStrings>) => {
+                const value = params.props.value;
+                const isBigValue = value !== undefined && isBig(value);
+                const validPercent = isBigValue ? isValidPercentage(new Big(value)) : false
                 return { ...params.props, error: !validPercent };
               },
               renderCell: renderValue,
@@ -202,9 +206,10 @@ const InputView = () => {
               field: 'currentBalanceString',
               headerName: 'Current Balance',
               editable: true,
-              valueFormatter: ({ value }) => currencyFormatter.format(value),
-              preProcessEditCellProps: (params: GridPreProcessEditCellProps) => {
-                const hasError = !isBig(params.props.value);
+              valueFormatter: ({ value }: GridValueFormatterParams<string>) => formatCurrency(value),
+              preProcessEditCellProps: (params: GridPreProcessEditCellProps<string, FundOutputItemStrings>) => {
+                const value = params.props.value;
+                const hasError = value === undefined || !isBig(value);
                 return { ...params.props, error: hasError };
               },
               renderCell: renderValue,
@@ -216,7 +221,7 @@ const InputView = () => {
             {
               field: 'currentPercentString',
               headerName: 'Current Percent',
-              valueFormatter: ({ value }) => value + '%',
+              valueFormatter: ({ value }: GridValueFormatterParams<string>) => value + '%',
               renderCell: renderValue,
               flex: 1,
               sortComparator: numericComparator,
@@ -226,7 +231,7 @@ const InputView = () => {
             {
               field: 'amountToInvestString',
               headerName: 'Amount to Invest',
-              valueFormatter: ({ value }) => currencyFormatter.format(value),
+              valueFormatter: ({ value }: GridValueFormatterParams<string>) => formatCurrency(value),
               renderCell: renderValue,
               flex: 1,
               sortComparator: numericComparator,
@@ -236,7 +241,7 @@ const InputView = () => {
             {
               field: 'balanceAfterString',
               headerName: 'Balance After Investment',
-              valueFormatter: ({ value }) => currencyFormatter.format(value),
+              valueFormatter: ({ value }: GridValueFormatterParams<string>) => formatCurrency(value),
               renderCell: renderValue,
               flex: 1,
               sortComparator: numericComparator,
@@ -246,7 +251,7 @@ const InputView = () => {
             {
               field: 'percentAfterString',
               headerName: 'Percent After Investment',
-              valueFormatter: ({ value }) => value + '%',
+              valueFormatter: ({ value }: GridValueFormatterParams<string>) => value + '%',
               renderCell: renderValue,
               flex: 1,
               sortComparator: numericComparator,
@@ -261,9 +266,10 @@ const InputView = () => {
               getActions: (params: GridRowParams<FundOutputItemStrings>) => params.row.internalId === -1 ? [] :
                 [
                   <GridActionsCellItem
+                    key='delete'
                     icon={<DeleteIcon />}
                     label='Delete'
-                    onClick={() => removeFundInputItem(params.row.internalId)}
+                    onClick={() => { removeFundInputItem(params.row.internalId); }}
                   />
                 ]
             }
