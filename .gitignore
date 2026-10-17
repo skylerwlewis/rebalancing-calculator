@@ -15,8 +15,8 @@ build
 *.tsbuildinfo
 
 # Playwright
-test-results/
-playwright-report/
+playwright-report
+test-results
 .playwright-mcp
 
 # Editor directories and files

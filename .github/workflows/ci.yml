@@ -8,6 +8,12 @@ permissions:
   contents: read
 
 jobs:
+  typecheck:
+    uses: skylerwlewis/test-actions/.github/workflows/typecheck.yml@v1
+
+  lint:
+    uses: skylerwlewis/test-actions/.github/workflows/lint.yml@v1
+
   unit-tests:
     uses: skylerwlewis/test-actions/.github/workflows/unit-tests-vitest.yml@v1
 

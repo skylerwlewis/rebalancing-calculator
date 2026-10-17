@@ -1,23 +1,15 @@
 import { BaseTextFieldProps, InputAdornment, TextField } from '@mui/material';
 import BigFieldProps, { BigFieldSettersKeys } from './BigFieldProps';
-import { Dispatch, SetStateAction } from 'react';
-import Big from 'big.js';
-import { isBig, setBigFromString } from '../utils/BigUtils';
-
-export const setBigFromInput = (setStringValue: Dispatch<SetStateAction<string>>, setBigValue: Dispatch<SetStateAction<Big>>) => {
-  return (event: React.ChangeEvent<HTMLInputElement>) => {
-    setBigFromString(event.target.value, setStringValue, setBigValue);
-  }
-};
+import { isBig, setBigFromInput } from '../utils/BigUtils';
 
 const MoneyField = (props: BigFieldProps) => {
 
   const baseTextFieldProps = Object.keys(props)
     .filter(key => !BigFieldSettersKeys.includes(key))
-    .reduce((obj, key) => {
-      obj[key] = props[key];
+    .reduce<Record<string, unknown>>((obj, key) => {
+      obj[key] = props[key as keyof BigFieldProps];
       return obj;
-    }, {} as BigFieldProps) as BaseTextFieldProps;
+    }, {}) as BaseTextFieldProps;
 
   const isBigValue = isBig(props.stringValue);
 

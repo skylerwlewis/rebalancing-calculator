@@ -5,12 +5,13 @@ export function getNewValue<T>(value: SetStateAction<T>, prevValue: T): T {
 }
 
 export function setTransform<T>(setValue: Dispatch<SetStateAction<T>>, transform: (val: T) => T, untransform?: (val: T) => T): Dispatch<SetStateAction<T>> {
-  return (value: SetStateAction<T>) =>
+  return (value: SetStateAction<T>) => {
     setValue((prevState: T) => transform(getNewValue(value, !untransform ? prevState : untransform(prevState))));
+  };
 }
 
 export function setIf<T>(condition: (val: T) => boolean, setValue: Dispatch<SetStateAction<T>>): Dispatch<SetStateAction<T>> {
-  return (value: SetStateAction<T>) =>
+  return (value: SetStateAction<T>) => {
     setValue((prevState: T) => {
       const newState = getNewValue(value, prevState);
       if (condition(newState)) {
@@ -19,9 +20,10 @@ export function setIf<T>(condition: (val: T) => boolean, setValue: Dispatch<SetS
         return prevState;
       }
     });
+  };
 }
 
-export function swap(valueSetters: Dispatch<SetStateAction<any[]>>[]): (index1: number, index2: number) => void {
+export function swap<T>(valueSetters: Dispatch<SetStateAction<T[]>>[]): (index1: number, index2: number) => void {
   return (index1: number, index2: number) => {
     const lowerIndex = Math.min(index1, index2);
     const upperIndex = Math.max(index1, index2);

@@ -3,14 +3,17 @@
 # dependabot-triage.sh — turn a failing Dependabot PR into a decision-ready report.
 #
 # Contract
-#   Inputs        $1  Dependabot PR number (required)
+#   Inputs        $1  Dependabot PR number or PR URL (required)
 #                 --repo <owner/name>   default: derived from the `origin` remote
 #                 --no-branch           report only; do not create/checkout a branch
 #   Output        Markdown report on stdout:
 #                   1. PR metadata
 #                   2. package.json dependency change table with semver bump class
-#                   3. FAILURE CLASS + the distilled CI error (not the raw log)
-#                   4. Fix-branch state and next steps
+#                   3. CI failures (scripts/lib/ci-failures.mjs): bot result
+#                      comments, every check and where its logs live, each
+#                      failing test with its error, and per-test failure history
+#                      (NEW vs PRE-EXISTING relative to this PR)
+#                   4. Fix-branch state and a Summary block of key=value lines
 #   Preconditions `gh` authenticated, `node` on PATH, clean git working tree.
 #   Side effects  Fetches base + PR head refs. Unless --no-branch, creates and
 #                 checks out `deps/<pr>-fix` off the PR head (idempotent: an
@@ -30,7 +33,7 @@ while [[ $# -gt 0 ]]; do
     --repo) REPO="$2"; shift 2 ;;
     --no-branch) MAKE_BRANCH=0; shift ;;
     -h|--help) sed -n '2,25p' "$0"; exit 0 ;;
-    *) PR="$1"; shift ;;
+    *) PR="${1%/}"; PR="${PR##*/}"; shift ;;
   esac
 done
 
@@ -103,69 +106,19 @@ MAJORS="$(echo "$DEPDIFF" | sed -n 's/^MAJORS=//p')"
 echo
 
 # ------------------------------------------------------------- CI failure info
-echo "## CI failures"
-echo
-
-checks="$(gh pr checks "$PR" --repo "$REPO" --json name,state,link 2>/dev/null || echo '[]')"
-run_ids="$(node -e '
-  const d = JSON.parse(require("fs").readFileSync(0, "utf8"));
-  const ids = new Set();
-  for (const c of d) {
-    if (!/fail|cancel|timed/i.test(c.state ?? "")) continue;
-    const m = String(c.link ?? "").match(/\/actions\/runs\/(\d+)/);
-    if (m) ids.add(m[1]);
-  }
-  process.stdout.write([...ids].join("\n"));
-' <<<"$checks")"
-
-if [[ -z "$run_ids" ]]; then
-  echo "_No failing checks reported. If the PR has not been built yet, there is nothing to distill._"
-  echo
-  FAILURE_CLASS="none"
-else
-  FAILURE_CLASS="unknown"
-  while read -r run_id; do
-    [[ -n "$run_id" ]] || continue
-    raw="$WORKDIR/run-${run_id}.log"
-    gh run view "$run_id" --repo "$REPO" --log-failed > "$raw" 2>/dev/null || true
-
-    # Strip `job \t step \t <ISO timestamp> ` prefixes, then collapse the duplicate
-    # blocks `--log-failed` emits for grouped steps.
-    clean="$WORKDIR/run-${run_id}.clean.log"
-    sed -E 's/^.*[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]+Z ?//' "$raw" \
-      | awk 'NF==0 || !seen[$0]++' > "$clean"
-
-    if   grep -q 'ERESOLVE'                   "$clean"; then class="dependency-conflict"
-    elif grep -qE 'error TS[0-9]+'            "$clean"; then class="typecheck"
-    elif grep -qE '^(FAIL |Tests: .*failed)'  "$clean"; then class="unit-test"
-    elif grep -qiE 'failed to compile|ERROR #' "$clean"; then class="build"
-    else class="unknown"
-    fi
-    [[ "$FAILURE_CLASS" == "unknown" || "$FAILURE_CLASS" == "none" ]] && FAILURE_CLASS="$class"
-
-    echo "### Run ${run_id} — \`${class}\`"
-    echo
-    echo "Log: https://github.com/${REPO}/actions/runs/${run_id}"
-    echo
-
-    if [[ "$class" == "dependency-conflict" ]]; then
-      echo "The install step failed, so no tests ran. Key edges:"
-      echo
-      echo '```'
-      grep -E 'While resolving:|^Found:|npm error (While resolving|Found|Could not resolve|Conflicting)|Could not resolve dependency|peer .*@|Conflicting peer dependency' "$clean" \
-        | sed -E 's/^npm error ?//' | head -20
-      echo '```'
-    else
-      echo '```'
-      start="$(grep -nE '^(npm error|##\[error\]|error TS|.* error TS[0-9]+|FAIL |Error:|●)' "$clean" | head -1 | cut -d: -f1 || true)"
-      start="${start:-1}"
-      [[ "$start" -gt 3 ]] && start=$((start - 3))
-      sed -n "${start},$((start + 79))p" "$clean" | grep -v '^##\[error\]Process completed'
-      echo '```'
-    fi
-    echo
-  done <<<"$run_ids"
-fi
+# Reads result comments, resolves every failing check (including API-created check
+# runs that have no /actions/runs/ link) to its workflow run, extracts each failing
+# test, and checks whether the same tests failed in earlier runs before this PR.
+CI_REPORT="$(node "$SCRIPT_DIR/lib/ci-failures.mjs" --repo "$REPO" --pr "$PR" --workdir "$WORKDIR")" \
+  || die "ci-failures.mjs failed; partial logs in $WORKDIR"
+echo "$CI_REPORT" | grep -vE '^(FAILURE_CLASS|FAILED_TESTS|NEW_FAILURES|PREEXISTING_FAILURES|UNRESOLVED_CHECKS|PENDING_CHECKS)='
+trailer() { echo "$CI_REPORT" | sed -n "s/^$1=//p"; }
+FAILURE_CLASS="$(trailer FAILURE_CLASS)"
+FAILED_TESTS="$(trailer FAILED_TESTS)"
+NEW_FAILURES="$(trailer NEW_FAILURES)"
+PREEXISTING_FAILURES="$(trailer PREEXISTING_FAILURES)"
+UNRESOLVED_CHECKS="$(trailer UNRESOLVED_CHECKS)"
+PENDING_CHECKS="$(trailer PENDING_CHECKS)"
 
 # ------------------------------------------------------------------ fix branch
 echo "## Fix branch"
@@ -193,6 +146,11 @@ echo
 echo "## Summary"
 echo
 echo "- FAILURE_CLASS: ${FAILURE_CLASS}"
+echo "- FAILED_TESTS: ${FAILED_TESTS:-0}"
+echo "- NEW_FAILURES: ${NEW_FAILURES:-none}"
+echo "- PREEXISTING_FAILURES: ${PREEXISTING_FAILURES:-none}"
+echo "- UNRESOLVED_CHECKS: ${UNRESOLVED_CHECKS:-none}"
+echo "- PENDING_CHECKS: ${PENDING_CHECKS:-none}"
 echo "- MAJOR_BUMPS: ${MAJORS:-none}"
 echo "- FULL_LOGS: ${WORKDIR}"
 echo

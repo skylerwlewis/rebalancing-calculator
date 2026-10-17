@@ -14,6 +14,4 @@ export const BigFieldSettersKeys = [
   'setBigValue'
 ]
 
-export default interface BigFieldProps extends BaseTextFieldProps, BigFieldSetters {
-  [index: string]: any;
-}
+export default interface BigFieldProps extends BaseTextFieldProps, BigFieldSetters {}
