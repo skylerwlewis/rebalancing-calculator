@@ -9,20 +9,22 @@ export const max = (...values: Big[]) => values.reduce((prev, curr) => prev.gt(c
 export const distinctBig = (value: Big, index: number, array: Big[]) => array.slice(0, index).filter(arrayItem => arrayItem.eq(value)).length === 0;
 export const compareBig = (big1: Big, big2: Big) => big1.lt(big2) ? -1 : big1.gt(big2) ? 1 : 0;
 
-export const isBig = (value: string) => {
+// Commas are treated as thousands separators and stripped before parsing.
+export const toBig = (value: string): Big | undefined => {
   try {
-    new Big(value.replaceAll(',', ''));
-    return true;
+    return new Big(value.replaceAll(',', ''));
   } catch {
-    return false;
+    return undefined;
   }
 };
 
+export const isBig = (value: string) => toBig(value) !== undefined;
+
 export const setBigFromString = (stringValue: string, setStringValue: Dispatch<SetStateAction<string>>, setBigValue: Dispatch<SetStateAction<Big>>) => {
   setStringValue(stringValue);
-  const stringValueScrubbed = stringValue.replaceAll(',', '');
-  if (isBig(stringValueScrubbed)) {
-    setBigValue(new Big(stringValueScrubbed));
+  const bigValue = toBig(stringValue);
+  if (bigValue !== undefined) {
+    setBigValue(bigValue);
   }
 };
 

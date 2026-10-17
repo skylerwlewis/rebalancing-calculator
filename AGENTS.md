@@ -92,7 +92,7 @@ Each context object lives in its own `*Context.ts` module, separate from its `*P
 
 **The `InputUrlParams` keys are a public contract.** Shared and bookmarked links encode them, so renaming or removing a key breaks existing links. Add new optional keys instead, and keep parsing old ones.
 
-**Money and percentages use big.js (`Big`), never JS `number`.** User-editable fields keep the input string alongside the parsed `Big` value. `isBig()` accepts thousands separators, so strip commas from user input before calling `new Big()` on it.
+**Money and percentages use big.js (`Big`), never JS `number`.** User-editable fields keep the input string alongside the parsed `Big` value. Commas in user input are thousands separators: parse it with `toBig()` (`src/utils/BigUtils.ts`), which strips them and returns `undefined` for invalid input, never with `new Big()` directly. `isBig()` accepts commas, so `isBig(value)` followed by `new Big(value)` throws on input such as `1,000` (#124).
 
 ---
 
