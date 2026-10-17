@@ -43,7 +43,7 @@ Dependabot cannot merge version updates and security updates into the same PR, s
 
 ### Fixing a failing grouped PR
 
-Use the `/dependabot-fix` prompt ([`.github/prompts/dependabot-fix.prompt.md`](.github/prompts/dependabot-fix.prompt.md)), which drives two scripts:
+Use the `/dependabot-fix` skill ([`.github/skills/dependabot-fix/SKILL.md`](.github/skills/dependabot-fix/SKILL.md)), invoked as `/dependabot-fix <pr# or URL>`, which drives two scripts:
 
 | Script | Contract |
 |---|---|
@@ -185,4 +185,4 @@ Both workflows are thin callers of reusable workflows in [`skylerwlewis/test-act
 
 - **No global state library** — Input and calculated state live in React Context providers (see *State and URL Sharing*). No Redux.
 - **Node version** — Node 24 required (`engines.node: "^24.13.1"` in `package.json`).
-- **Files kept in sync with other repos** — These files are byte-identical copies of the same files in other repos that use this tooling: `scripts/dependabot-triage.sh`, `scripts/dependabot-verify.sh`, `scripts/lib/*.mjs`, `.github/prompts/dependabot-fix.prompt.md`, `eslint.config.mjs`, and `e2e/tsconfig.json`. The first block of `.github/dependabot.yml` (through the shared `eslint` / `typescript` holds) is shared too. Change every copy together, never just one.
+- **Files kept in sync with other repos** — These files are byte-identical copies of the same files in other repos that use this tooling: `scripts/dependabot-triage.sh`, `scripts/dependabot-verify.sh`, `scripts/lib/*.mjs`, `.github/skills/dependabot-fix/SKILL.md`, `eslint.config.mjs`, and `e2e/tsconfig.json`. The first block of `.github/dependabot.yml` (through the shared `eslint` / `typescript` holds) is shared too. Change every copy together, never just one.

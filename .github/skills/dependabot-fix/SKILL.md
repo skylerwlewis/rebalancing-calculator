@@ -1,21 +1,23 @@
 ---
+name: dependabot-fix
 description: "Fix a failing grouped Dependabot PR: triage the failure, separate pre-existing flakes from update-caused failures, hold back or adopt blocking majors, verify locally, and push a fix branch for review."
-mode: agent
+argument-hint: "<Dependabot PR number or URL>"
+disable-model-invocation: true
 ---
 
 # Fix a failing Dependabot PR
 
-Fix Dependabot PR **#${input:pr:Dependabot PR number}** so the update can land, and push a branch the developer will open a PR from.
+Fix the Dependabot PR given after the command (a PR number or URL) so the update can land, and push a branch the developer will open a PR from. Below, `<pr>` means that PR's number. If no PR was given, ask for it before doing anything else.
 
 All data gathering is already scripted. Do not run `gh` by hand, do not read raw CI logs, and do not diff `package-lock.json`. Your only job is the judgment calls in step 2. If an error excerpt is too short to decide, grep the `Full log:` path the triage printed instead of re-fetching.
 
 ## 1. Triage
 
 ```bash
-./scripts/dependabot-triage.sh ${input:pr}
+./scripts/dependabot-triage.sh <pr>
 ```
 
-This prints the dependency change table, then the CI picture: the bot result comments, every check with where its logs live, each failing test with its error excerpt, and a per-test **History** verdict. It checks out `deps/${input:pr}-fix`. If it exits non-zero, report the error and stop — do not improvise around a failed precondition.
+This prints the dependency change table, then the CI picture: the bot result comments, every check with where its logs live, each failing test with its error excerpt, and a per-test **History** verdict. It checks out `deps/<pr>-fix`. If it exits non-zero, report the error and stop — do not improvise around a failed precondition.
 
 If it warns that Dependabot force-pushed a rebase, stop and ask the developer how to reconcile.
 
@@ -95,7 +97,7 @@ If verification cannot pass after a reasonable number of attempts, revert to hol
 Commit with a message naming what was adopted and what was held back and why, then:
 
 ```bash
-git push -u origin deps/${input:pr}-fix
+git push -u origin deps/<pr>-fix
 ```
 
 Do **not** open a pull request. The developer opens it themselves, targeting `main` — never the Dependabot branch, which gets force-pushed on rebase.
@@ -108,4 +110,4 @@ Reply with only:
 - One line per pre-existing failure: the test, its History verdict with the earlier-failure count, and whether it was fixed (with the reproduction used) or left for a re-run.
 - Any code changes made outside `package.json` / `dependabot.yml`.
 - Final `dependabot-verify.sh` result.
-- The pushed branch name and a PR-open link, with `<owner>/<repo>` taken from the triage report's title line: `https://github.com/<owner>/<repo>/compare/main...deps/${input:pr}-fix?expand=1`
+- The pushed branch name and a PR-open link, with `<owner>/<repo>` taken from the triage report's title line: `https://github.com/<owner>/<repo>/compare/main...deps/<pr>-fix?expand=1`
