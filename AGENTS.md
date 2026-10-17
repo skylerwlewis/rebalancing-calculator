@@ -130,6 +130,7 @@ Three separate tsconfig files, built together with `tsc -b`:
 - Run with: `vitest` (via `npm test`). In a terminal it starts watch mode; use `npm test -- --run` for a single run. CI and `dependabot-verify.sh` run it without a TTY, so it runs once.
 - Test files: `src/**/*.{test,spec}.{ts,tsx}`
 - Setup: `src/setupTests.ts` registers the `@testing-library/jest-dom` matchers and cleans up after each test
+- `vite.config.ts` leaves out `cloudflare()` when Vitest loads it (`process.env.VITEST`). `@cloudflare/vite-plugin` 1.58.0+ otherwise fails Vitest at startup with "There is already a server associated with the config" ([cloudflare/workers-sdk#15969](https://github.com/cloudflare/workers-sdk/issues/15969)); the fix is in the plugin's v2. Remove the condition after moving to a fixed release.
 
 ### E2E Tests (Playwright)
 
