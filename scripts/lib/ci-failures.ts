@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * ci-failures.mts — explain why a PR's checks failed, and whether the failures are new.
+ * ci-failures.ts — explain why a PR's checks failed, and whether the failures are new.
  *
  * Contract
  *   Inputs        --repo <owner/name>   (required)
@@ -124,7 +124,7 @@ const HISTORY_DAYS = Number(args["history-days"] ?? 90);
 const HISTORY_MAX_RUNS = 15;
 
 if (!REPO || !PR || !WORKDIR) {
-  console.error("usage: ci-failures.mts --repo owner/name --pr <n> --workdir <dir> [--history-days 90]");
+  console.error("usage: ci-failures.ts --repo owner/name --pr <n> --workdir <dir> [--history-days 90]");
   process.exit(2);
 }
 mkdirSync(WORKDIR, { recursive: true });

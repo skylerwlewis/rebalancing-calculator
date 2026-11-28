@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * dep-diff.mts — classify dependency version changes between two package.json files.
+ * dep-diff.ts — classify dependency version changes between two package.json files.
  *
  * Contract
  *   Inputs        argv[2] = path to BASE package.json
@@ -57,7 +57,7 @@ const classify = (from: string, to: string): Bump => {
 
 const [, , basePath, headPath] = process.argv;
 if (!basePath || !headPath) {
-  console.error("usage: dep-diff.mts <base package.json> <head package.json>");
+  console.error("usage: dep-diff.ts <base package.json> <head package.json>");
   process.exit(2);
 }
 

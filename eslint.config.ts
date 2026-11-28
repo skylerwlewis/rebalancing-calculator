@@ -15,7 +15,7 @@ export default defineConfig(
       ...tseslint.configs.stylisticTypeChecked,
       reactHooks.configs.flat.recommended,
     ],
-    files: ['**/*.{ts,tsx,mts}'],
+    files: ['**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2022,
       globals: globals.browser,
