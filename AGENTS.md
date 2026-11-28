@@ -4,6 +4,10 @@ Guidelines for AI agents working in this repo. Focus on non-obvious conventions 
 
 **Agents: keep this file current.** When you encounter a pattern, constraint, or gotcha not documented here — or when a conversation surfaces a new convention (a wording standard, a sync rule, a workflow decision) — propose the addition before ending your response. The developer may not think to ask. Gaps in this file become drift in the codebase.
 
+**Document only what exists in the current branch.** Do not mention features from unmerged branches in `AGENTS.md`, prompts, or docs; record them in that branch's own copy so each branch stays accurate and merges stay clean. Anything a future agent or contributor needs to know — conventions, preferences, decisions, gotchas — belongs in the repo's agent files, not in agent memory or chat.
+
+**Agent files describe the present.** State what is true now; don't record when it was verified, captured, refreshed, or observed (no "verified May 2026", "as of August 2026"). If it was verified, it is simply stated. If it stops being true, edit or remove it. Keep a date only when it is part of the fact itself or a future trigger (for example, a deadline for removing a fallback).
+
 ---
 
 ## Project Summary
@@ -17,8 +21,8 @@ A browser-based portfolio rebalancing calculator: the user lists their funds wit
 ## Build & Common Commands
 
 ```bash
-npm run typecheck       # Run all 3 TypeScript checks (app, node, e2e) via tsc -b
-npm run lint            # ESLint (typescript-eslint strict type-checked, eslint.config.mjs)
+npm run typecheck       # Run all 4 TypeScript checks (app, node, e2e, scripts) via tsc -b
+npm run lint            # ESLint (typescript-eslint strict type-checked, eslint.config.ts)
 npm test                # Vitest unit tests (watch mode in a terminal; add `-- --run` for one run)
 npm run test:e2e        # Playwright e2e tests (auto-starts the Vite dev server on :5174 if needed)
 npm run build           # tsc -b + Vite build → ./build/
@@ -47,13 +51,13 @@ Use the `/dependabot-fix` skill ([`.github/skills/dependabot-fix/SKILL.md`](.git
 
 | Script | Contract |
 |---|---|
-| [`scripts/dependabot-triage.sh`](scripts/dependabot-triage.sh) `<pr# or URL>` | Prints PR metadata, a semver-classified dependency change table, and the CI report from `ci-failures.mjs`, then a `## Summary` block (`FAILURE_CLASS`, `NEW_FAILURES`, `PREEXISTING_FAILURES`, `UNRESOLVED_CHECKS`, `PENDING_CHECKS`, `MAJOR_BUMPS`). Creates and checks out `deps/<pr#>-fix` off the Dependabot head. |
+| [`scripts/dependabot-triage.sh`](scripts/dependabot-triage.sh) `<pr# or URL>` | Prints PR metadata, a semver-classified dependency change table, and the CI report from `ci-failures.ts`, then a `## Summary` block (`FAILURE_CLASS`, `NEW_FAILURES`, `PREEXISTING_FAILURES`, `UNRESOLVED_CHECKS`, `PENDING_CHECKS`, `MAJOR_BUMPS`). Creates and checks out `deps/<pr#>-fix` off the Dependabot head. |
 | [`scripts/dependabot-verify.sh`](scripts/dependabot-verify.sh) | Runs install → `npm ci` lock parity → typecheck → lint → unit tests → build → Playwright browser install → e2e. Prints a pass/fail table and only the failing step's output. |
 
 Shared modules used by triage:
 
-- [`scripts/lib/dep-diff.mjs`](scripts/lib/dep-diff.mjs) classifies version changes in `package.json`.
-- [`scripts/lib/ci-failures.mjs`](scripts/lib/ci-failures.mjs) builds the CI picture. It reads the bot result comments, resolves every failing check to its Actions run (including API-created check runs; see *GitHub Workflows*), and extracts each failing Playwright, Vitest, or Jest test with its error. It then checks earlier runs of the same workflow and labels each test **NEW** or **PRE-EXISTING** (intermittent or consistent) relative to the PR's creation date. A pre-existing failure was not caused by the update.
+- [`scripts/lib/dep-diff.ts`](scripts/lib/dep-diff.ts) classifies version changes in `package.json`.
+- [`scripts/lib/ci-failures.ts`](scripts/lib/ci-failures.ts) builds the CI picture. It reads the bot result comments, resolves every failing check to its Actions run (including API-created check runs; see *GitHub Workflows*), and extracts each failing Playwright, Vitest, or Jest test with its error. It then checks earlier runs of the same workflow and labels each test **NEW** or **PRE-EXISTING** (intermittent or consistent) relative to the PR's creation date. A pre-existing failure was not caused by the update.
 
 Prerequisites: `gh` (authenticated), Node 24.
 
@@ -96,27 +100,28 @@ Each context object lives in its own `*Context.ts` module, separate from its `*P
 
 ---
 
-## Fund Grid and Calculation
-
-The app is one page (`src/input/InputView.tsx`). Funds are edited in an MUI X `DataGrid`; the rebalancing math is in `src/calculator/Calculator.ts`.
-
-**`@mui/x-data-grid` is pinned to 6.18.2.** Later versions re-render only the edited row after a cell edit, leaving computed values in sibling rows stale. `e2e/regression.spec.ts` guards this. React 19 and MUI 9 are also held back. Both holds are documented in `.github/dependabot.yml` and are waiting on the `deps/113-datagrid-followup` branch.
-
-**`vite.config.ts` aliases `@mui/icons-material/<Icon>` to its ESM build.** Vite 8 (Rolldown) does not apply CJS interop to the pre-bundled icon files, so without the alias the icons import as plain objects instead of components. Keep it until the app moves to an icons version that no longer needs it.
-
----
-
 ## TypeScript Configuration
 
-Three separate tsconfig files, built together with `tsc -b`:
+**TypeScript everywhere it can be used.** Write every new script, config, plugin, and test in TypeScript, and convert existing JavaScript when you touch it, unless a tool can only load JavaScript. Don't go to great lengths to avoid JavaScript; the exceptions are small and each has a reason:
+
+- None. Every source, config, script, and test file is TypeScript.
+
+When you add a JavaScript file, add it to this list with the reason.
+
+Four separate tsconfig files, built together with `tsc -b`:
 
 | File | Used for |
 |---|---|
 | `tsconfig.app.json` | `src/**` |
-| `tsconfig.node.json` | Config files (`vite.config.ts`, `playwright.config.ts`) |
+| `tsconfig.node.json` | Config files (`eslint.config.ts`, `vite.config.ts`, `playwright.config.ts`) |
 | `e2e/tsconfig.json` | Playwright tests (extends `tsconfig.node.json`, adds DOM lib) |
+| `scripts/tsconfig.json` | Node scripts in `scripts/` (extends `tsconfig.node.json`, adds `erasableSyntaxOnly` and `verbatimModuleSyntax`) |
 
-`tsconfig.json` at the root is a solution file that references all three — it has no `include` of its own. All three use bundler mode with `noEmit`; Vite does the transpiling, so `target` and `lib` affect type checking only.
+`tsconfig.json` at the root is a solution file that references all four — it has no `include` of its own. All four use bundler mode with `noEmit`; Vite does the transpiling, so `target` and `lib` affect type checking only.
+
+**Scripts in `scripts/` run directly with Node 24's type stripping** (`node scripts/lib/dep-diff.ts`), with no build step. `scripts/tsconfig.json` turns what would be runtime failures into typecheck errors: relative imports need the `.ts` extension, type-only imports need `import type`, and enums, namespaces, and parameter properties aren't allowed. `scripts/package.json` sets `"type": "module"` so Node loads them as ES modules in every repo, including the Gatsby repos, which can't set it at the root because Gatsby doesn't run in an ESM package. Without it, Node warns `MODULE_TYPELESS_PACKAGE_JSON` on every run.
+
+**`eslint.config.ts` needs the `jiti` dev dependency.** ESLint loads TypeScript config files through `jiti`; without it, `npm run lint` fails before linting anything. ESLint doesn't typecheck its config; `tsconfig.node.json` does.
 
 **TypeScript is pinned to `~6.0.3`.** typescript-eslint (and so `npm run lint`) supports only `typescript <6.1.0`, and TypeScript 7 has no JS API for it to use. The `typescript` entry in `.github/dependabot.yml` holds every release from 6.1.0 on; move to a newer TypeScript only together with a typescript-eslint release that supports it.
 
@@ -145,6 +150,16 @@ Three separate tsconfig files, built together with `tsc -b`:
 
 ---
 
+## Fund Grid and Calculation
+
+The app is one page (`src/input/InputView.tsx`). Funds are edited in an MUI X `DataGrid`; the rebalancing math is in `src/calculator/Calculator.ts`.
+
+**`@mui/x-data-grid` is pinned to 6.18.2.** Later versions re-render only the edited row after a cell edit, leaving computed values in sibling rows stale. `e2e/regression.spec.ts` guards this. React 19 and MUI 9 are also held back. Both holds are documented in `.github/dependabot.yml` and are waiting on the `deps/113-datagrid-followup` branch.
+
+**`vite.config.ts` aliases `@mui/icons-material/<Icon>` to its ESM build.** Vite 8 (Rolldown) does not apply CJS interop to the pre-bundled icon files, so without the alias the icons import as plain objects instead of components. Keep it until the app moves to an icons version that no longer needs it.
+
+---
+
 ## Code Style
 
 - **Arrow functions preferred** over function declarations (components, handlers)
@@ -159,8 +174,8 @@ Three separate tsconfig files, built together with `tsc -b`:
 
 ### `ci.yml` (triggers on PR)
 
-1. **Typecheck** — runs all 3 `tsc` checks via `tsc -b`
-2. **Lint** — runs `npm run lint` (ESLint with `eslint.config.mjs`)
+1. **Typecheck** — runs all 4 `tsc` checks via `tsc -b`
+2. **Lint** — runs `npm run lint` (ESLint with `eslint.config.ts`)
 3. **Unit Tests** — runs Vitest with `--run --reporter=verbose --reporter=json --outputFile=test-results/vitest-results.json`, then posts a results table to the Job Summary and a PR comment (marker: `<!-- vitest-test-results -->`)
 4. **E2E Tests** — builds the app (`npm run build`), runs Playwright against the Vite dev server that `playwright.config.ts` starts, posts a results table to the Job Summary and a PR comment (marker: `<!-- playwright-ci-results -->`)
 
@@ -172,7 +187,7 @@ Both workflows are thin callers of reusable workflows in [`skylerwlewis/test-act
 2. `find-preview-for-check-run.yml` maps the check's `head_sha` to the open PR (on a `pull_request` event, it starts from the PR and uses the completed `Workers Builds:` check on its head, skipping if the build is still running or an `E2E Tests (Preview)` check already exists), reads the preview URL from the Cloudflare check output (falling back to the bot comment), and creates an `E2E Tests (Preview)` check run on the PR head through the Checks API. Its log prints `Created check run <id>`.
 3. `e2e-from-url.yml` runs Playwright with `BASE_URL` set to the preview, upserts the `<!-- playwright-preview-results -->` comment, and completes that check run.
 
-**Finding the logs for a failed preview check:** the PR check links to `/runs/<check-run-id>`, not `/actions/runs/<run-id>`. `GITHUB_TOKEN` cannot set `details_url` because GitHub overrides it (see `test-actions` commit `aca72fb`). Instead, the check output and the `<!-- playwright-preview-results -->` comment carry a `Logs: [workflow run <id>](…)` link, and `external_id` holds the run ID. Both are written when the check is **created**, so the link works even for checks that are still running or were cancelled. `scripts/lib/ci-failures.mjs` uses that link. Only checks created before test-actions v1.3.0 (2026-10-17) lack it. For those, a legacy fallback finds the run whose log contains `Created check run <id>`; it can be removed after 2027-01-15, when 90-day log retention has expired every such run. A newer check without the link is reported as a `test-actions` regression rather than silently searched for. Don't search the Actions tab by name and time.
+**Finding the logs for a failed preview check:** the PR check links to `/runs/<check-run-id>`, not `/actions/runs/<run-id>`. `GITHUB_TOKEN` cannot set `details_url` because GitHub overrides it (see `test-actions` commit `aca72fb`). Instead, the check output and the `<!-- playwright-preview-results -->` comment carry a `Logs: [workflow run <id>](…)` link, and `external_id` holds the run ID. Both are written when the check is **created**, so the link works even for checks that are still running or were cancelled. `scripts/lib/ci-failures.ts` uses that link. Only checks created before test-actions v1.3.0 (2026-10-17) lack it. For those, a legacy fallback finds the run whose log contains `Created check run <id>`; it can be removed after 2027-01-15, when 90-day log retention has expired every such run. A newer check without the link is reported as a `test-actions` regression rather than silently searched for. Don't search the Actions tab by name and time.
 
 **PR comment upsert pattern** — All workflow steps that post PR comments use an invisible HTML marker comment (e.g., `<!-- vitest-test-results -->`, `<!-- playwright-ci-results -->`, `<!-- playwright-preview-results -->`) as the first line of the comment body. The step lists existing comments, finds one containing the marker, and updates it — otherwise creates a new one. Any new PR comment step must follow this pattern to avoid duplicate comments on re-runs.
 
@@ -186,4 +201,19 @@ Both workflows are thin callers of reusable workflows in [`skylerwlewis/test-act
 
 - **No global state library** — Input and calculated state live in React Context providers (see *State and URL Sharing*). No Redux.
 - **Node version** — Node 24 required (`engines.node: "^24.13.1"` in `package.json`).
-- **Files kept in sync with other repos** — These files are byte-identical copies of the same files in other repos that use this tooling: `scripts/dependabot-triage.sh`, `scripts/dependabot-verify.sh`, `scripts/lib/*.mjs`, `.github/skills/dependabot-fix/SKILL.md`, `eslint.config.mjs`, and `e2e/tsconfig.json`. The first block of `.github/dependabot.yml` (through the shared `eslint` / `typescript` holds) is shared too. Change every copy together, never just one.
+- **Use npm 12 for any command that writes `package-lock.json`** (`npm install`, `npm uninstall`, and the `npm install` step of `dependabot-verify.sh`). Dependabot writes the lockfile with a newer npm that records `libc` fields, and every Node 24 release bundles npm 11, which drops them all (dozens of lines of unrelated churn). Check with `npm -v`; if it prints 11, run `npx -y npm@12 install …` instead. npm 12 needs Node 24.15.0 or later, so on the pinned Node 24.13.1 it warns `EBADENGINE` but still writes a correct lockfile. `npm ci` doesn't write the lockfile, so CI isn't affected.
+- **Files kept in sync with other repos** — These files are byte-identical copies of the same files in other repos that use this tooling: `scripts/dependabot-triage.sh`, `scripts/dependabot-verify.sh`, `scripts/lib/*.ts`, `scripts/package.json`, `scripts/tsconfig.json`, `.github/skills/dependabot-fix/SKILL.md`, `eslint.config.ts`, and `e2e/tsconfig.json`. The first block of `.github/dependabot.yml` (through the shared `eslint` / `typescript` holds) is shared too. Change every copy together, never just one.
+
+---
+
+## Keeping Things In Sync
+
+Every change must cascade immediately to all related files. Drift is never acceptable. This section tells you what connects to what — use it every time you touch anything, not on a schedule.
+
+### Dependencies & infrastructure (on trigger, not schedule)
+
+Run these when relevant, not on a calendar:
+- **`npm audit`** — run after any `npm install` or dependency change. Fix high/critical before merging.
+- **`wrangler.toml` `compatibility_date`** — update when deploying significant Worker changes or when Cloudflare flags deprecations. Keep within the last year.
+- **`engines.node`** — update when the dev environment upgrades Node. Must match `^` the actual version in use.
+- **Playwright browsers** — run `npx playwright install chromium` after any Playwright version bump.

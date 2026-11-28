@@ -9,7 +9,7 @@
 #   Output        Markdown report on stdout:
 #                   1. PR metadata
 #                   2. package.json dependency change table with semver bump class
-#                   3. CI failures (scripts/lib/ci-failures.mjs): bot result
+#                   3. CI failures (scripts/lib/ci-failures.ts): bot result
 #                      comments, every check and where its logs live, each
 #                      failing test with its error, and per-test failure history
 #                      (NEW vs PRE-EXISTING relative to this PR)
@@ -100,7 +100,7 @@ git show "origin/${HEAD_REF}:package.json" > "$WORKDIR/head.json"
 
 echo "## Dependency changes"
 echo
-DEPDIFF="$(node "$SCRIPT_DIR/lib/dep-diff.mjs" "$WORKDIR/base.json" "$WORKDIR/head.json")"
+DEPDIFF="$(node "$SCRIPT_DIR/lib/dep-diff.ts" "$WORKDIR/base.json" "$WORKDIR/head.json")"
 echo "$DEPDIFF" | grep -v '^MAJORS='
 MAJORS="$(echo "$DEPDIFF" | sed -n 's/^MAJORS=//p')"
 echo
@@ -109,8 +109,8 @@ echo
 # Reads result comments, resolves every failing check (including API-created check
 # runs that have no /actions/runs/ link) to its workflow run, extracts each failing
 # test, and checks whether the same tests failed in earlier runs before this PR.
-CI_REPORT="$(node "$SCRIPT_DIR/lib/ci-failures.mjs" --repo "$REPO" --pr "$PR" --workdir "$WORKDIR")" \
-  || die "ci-failures.mjs failed; partial logs in $WORKDIR"
+CI_REPORT="$(node "$SCRIPT_DIR/lib/ci-failures.ts" --repo "$REPO" --pr "$PR" --workdir "$WORKDIR")" \
+  || die "ci-failures.ts failed; partial logs in $WORKDIR"
 echo "$CI_REPORT" | grep -vE '^(FAILURE_CLASS|FAILED_TESTS|NEW_FAILURES|PREEXISTING_FAILURES|UNRESOLVED_CHECKS|PENDING_CHECKS)='
 trailer() { echo "$CI_REPORT" | sed -n "s/^$1=//p"; }
 FAILURE_CLASS="$(trailer FAILURE_CLASS)"

@@ -1,14 +1,20 @@
 import js from '@eslint/js'
+import { defineConfig } from 'eslint/config'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import react from 'eslint-plugin-react'
 
-export default tseslint.config(
+export default defineConfig(
   { ignores: ['build', 'public', '.cache', 'playwright-report', 'test-results', 'src/gatsby-types.d.ts'] },
   {
-    extends: [js.configs.recommended, ...tseslint.configs.strictTypeChecked, ...tseslint.configs.stylisticTypeChecked],
+    extends: [
+      js.configs.recommended,
+      ...tseslint.configs.strictTypeChecked,
+      ...tseslint.configs.stylisticTypeChecked,
+      reactHooks.configs.flat.recommended,
+    ],
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2022,
@@ -20,12 +26,10 @@ export default tseslint.config(
     },
     settings: { react: { version: 'detect' } },
     plugins: {
-      'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
       react,
     },
     rules: {
-      ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': [
         'warn',
         // Head, query, config, and getServerData are Gatsby page API exports.

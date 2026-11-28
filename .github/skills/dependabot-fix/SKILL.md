@@ -88,7 +88,7 @@ Two failure modes that are about our code, not the dependency, and should be fix
 
 - A major UI dependency changes rendered markup, breaking `getByRole` / `getByText` selectors in `e2e/` or `*.test.tsx`. Update the selectors.
 - A TypeScript major surfaces pre-existing type errors. Fix them if they are small.
-- An ESLint plugin or typescript-eslint update adds or tightens rules. Fix the new violations if they are small; do not loosen `eslint.config.mjs` to get past them.
+- An ESLint plugin or typescript-eslint update adds or tightens rules. Fix the new violations if they are small; do not loosen `eslint.config.ts` to get past them.
 
 If verification cannot pass after a reasonable number of attempts, revert to holding the dependency back rather than leaving the branch broken.
 

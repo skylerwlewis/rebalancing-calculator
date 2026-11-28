@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * dep-diff.mjs — classify dependency version changes between two package.json files.
+ * dep-diff.ts — classify dependency version changes between two package.json files.
  *
  * Contract
  *   Inputs        argv[2] = path to BASE package.json
@@ -16,24 +16,36 @@
 
 import { readFileSync } from "node:fs";
 
-const FIELDS = ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"];
+const FIELDS = ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"] as const;
 
-const read = (p) => {
+type Field = (typeof FIELDS)[number];
+type PackageJson = Partial<Record<Field, Partial<Record<string, string>>>>;
+type Bump = "MAJOR" | "ADDED" | "REMOVED" | "UNKNOWN" | "minor" | "patch" | "range";
+
+interface Row {
+  name: string;
+  field: Field;
+  from: string;
+  to: string;
+  bump: Bump;
+}
+
+const read = (p: string): PackageJson => {
   try {
-    return JSON.parse(readFileSync(p, "utf8"));
+    return JSON.parse(readFileSync(p, "utf8")) as PackageJson;
   } catch (err) {
-    console.error(`dep-diff: cannot read ${p}: ${err.message}`);
+    console.error(`dep-diff: cannot read ${p}: ${(err as Error).message}`);
     process.exit(2);
   }
 };
 
 /** Strip range operators and return [major, minor, patch], or null if unparseable. */
-const parseVersion = (range) => {
-  const m = String(range).match(/(\d+)\.(\d+)\.(\d+)/);
+const parseVersion = (range: string): [number, number, number] | null => {
+  const m = /(\d+)\.(\d+)\.(\d+)/.exec(range);
   return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
 };
 
-const classify = (from, to) => {
+const classify = (from: string, to: string): Bump => {
   const a = parseVersion(from);
   const b = parseVersion(to);
   if (!a || !b) return "UNKNOWN";
@@ -45,26 +57,28 @@ const classify = (from, to) => {
 
 const [, , basePath, headPath] = process.argv;
 if (!basePath || !headPath) {
-  console.error("usage: dep-diff.mjs <base package.json> <head package.json>");
+  console.error("usage: dep-diff.ts <base package.json> <head package.json>");
   process.exit(2);
 }
 
 const base = read(basePath);
 const head = read(headPath);
 
-const rows = [];
+const rows: Row[] = [];
 for (const field of FIELDS) {
   const b = base[field] ?? {};
   const h = head[field] ?? {};
   for (const name of new Set([...Object.keys(b), ...Object.keys(h)])) {
-    if (b[name] === h[name]) continue;
-    if (!(name in b)) rows.push({ name, field, from: "—", to: h[name], bump: "ADDED" });
-    else if (!(name in h)) rows.push({ name, field, from: b[name], to: "—", bump: "REMOVED" });
-    else rows.push({ name, field, from: b[name], to: h[name], bump: classify(b[name], h[name]) });
+    const from = b[name];
+    const to = h[name];
+    if (from === to) continue;
+    if (from === undefined) rows.push({ name, field, from: "—", to: to ?? "—", bump: "ADDED" });
+    else if (to === undefined) rows.push({ name, field, from, to: "—", bump: "REMOVED" });
+    else rows.push({ name, field, from, to, bump: classify(from, to) });
   }
 }
 
-const rank = { MAJOR: 0, ADDED: 1, REMOVED: 1, UNKNOWN: 2, minor: 3, patch: 4, range: 5 };
+const rank: Record<Bump, number> = { MAJOR: 0, ADDED: 1, REMOVED: 1, UNKNOWN: 2, minor: 3, patch: 4, range: 5 };
 rows.sort((x, y) => rank[x.bump] - rank[y.bump] || x.name.localeCompare(y.name));
 
 if (rows.length === 0) {
@@ -81,12 +95,12 @@ for (const r of rows) {
   console.log(`| \`${r.name}\` | ${section} | \`${r.from}\` | \`${r.to}\` | ${r.bump} |`);
 }
 
-const counts = rows.reduce((acc, r) => ({ ...acc, [r.bump]: (acc[r.bump] ?? 0) + 1 }), {});
+const counts = rows.reduce<Partial<Record<Bump, number>>>((acc, r) => ({ ...acc, [r.bump]: (acc[r.bump] ?? 0) + 1 }), {});
 console.log("");
 console.log(
   `Totals: ${Object.entries(counts)
-    .map(([k, v]) => `${k}=${v}`)
-    .join(", ")} (${rows.length} changed)`,
+    .map(([k, v]) => `${k}=${String(v)}`)
+    .join(", ")} (${String(rows.length)} changed)`,
 );
 console.log("");
 console.log(`MAJORS=${rows.filter((r) => r.bump === "MAJOR").map((r) => r.name).join(",")}`);
