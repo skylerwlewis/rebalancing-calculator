@@ -19,5 +19,5 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts", "playwright.config.ts"]
+  "include": ["eslint.config.ts", "vite.config.ts", "playwright.config.ts"]
 }
